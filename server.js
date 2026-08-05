@@ -584,7 +584,7 @@ app.post('/api/documentos', upload.single('foto'), async (req,res) => {
     const uCli = usrs.find(u=>normalizarNombre(u.nombre)===normalizarNombre(supCli));
     if (uAlq) supAlq=uAlq.nombre;
     if (uCli) supCli=uCli.nombre;
-    await db.query(`INSERT INTO documentos VALUES($1,$2,$3,$4,$5,$6,$7,NOW(),$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$20,$21,$22,$23,$24,$25,false,'portal','pendiente_b',NULL,NULL,NULL,NULL)`,
+    await db.query(`INSERT INTO documentos VALUES($1,$2,$3,$4,$5,$6,$7,NOW(),$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$20,$21,$22,$23,$24,false,'portal','pendiente_b',NULL,NULL,NULL,NULL)`,
       [id,num,operario_id||null,cliente_id||null,proyecto_id||null,maquina_id,
        fecha_trabajo,obra,finca||'',area||'',combustible||'',observaciones||'',
        supAlq,supCli,supervisor_cliente_sup||'',
@@ -1009,7 +1009,7 @@ app.post('/api/documentos/jelou', async (req,res) => {
     }
     const hoy=new Date().toISOString().slice(0,10);
     const id=uuidv4(), num=await nextNum('doc');
-    await db.query(`INSERT INTO documentos VALUES($1,$2,$3,$4,NULL,$5,$6,NOW(),$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$20,$21,$22,false,'whatsapp_jelou','pendiente_b',NULL,NULL,NULL,NULL)`,
+    await db.query(`INSERT INTO documentos VALUES($1,$2,$3,$4,NULL,$5,$6,NOW(),$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$20,$21,$22,$23,'whatsapp_jelou','pendiente_b',NULL,NULL,NULL,NULL)`,
       [id,num,operario?.id||null,clienteId,maq.id,
        fecha_trabajo,obra,finca||'',area||'',combustible||'',observaciones||'',
        supAlq,supCli,supervisor_cliente_sup||'',
