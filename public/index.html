@@ -1,0 +1,1491 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>Alquimaq Portal</title>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --navy:#1B3A5C;--navy-l:#2a5280;--amber:#D97706;--amber-bg:#FEF3C7;
+  --green:#166534;--green-bg:#DCFCE7;--red:#991B1B;--red-bg:#FEE2E2;
+  --orange:#9A3412;--orange-bg:#FFEDD5;--blue:#1D4ED8;--blue-bg:#DBEAFE;
+  --purple:#5B21B6;--purple-bg:#EDE9FE;
+  --g50:#F8FAFC;--g100:#F1F5F9;--g200:#E2E8F0;--g400:#94A3B8;--g600:#475569;--g800:#1E293B;
+  --text:#1E293B;--muted:#64748B;--border:#E2E8F0;
+}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:var(--g100);color:var(--text);font-size:14px}
+/* LOGIN */
+.login-wrap{min-height:100vh;display:flex;align-items:center;justify-content:center;background:var(--navy)}
+.login-card{background:#fff;border-radius:14px;padding:32px 36px;width:400px;box-shadow:0 20px 60px rgba(0,0,0,.25)}
+.login-logo{text-align:center;margin-bottom:24px}
+.login-logo .brand{font-size:24px;font-weight:700;color:var(--navy)}
+.login-logo .sub{font-size:12px;color:var(--muted);margin-top:3px}
+.login-hint{font-size:11px;color:var(--muted);margin-top:14px;background:var(--g50);border-radius:6px;padding:10px 12px;line-height:1.9}
+.login-err{color:var(--red);font-size:12px;margin-top:8px;text-align:center}
+/* LAYOUT */
+.app{display:flex;height:100vh;overflow:hidden}
+.sidebar{width:230px;background:var(--navy);display:flex;flex-direction:column;flex-shrink:0;overflow-y:auto}
+.main{flex:1;display:flex;flex-direction:column;overflow:hidden}
+.logo{padding:18px 16px 14px;border-bottom:1px solid rgba(255,255,255,.08)}
+.logo-brand{color:#fff;font-size:17px;font-weight:700}
+.logo-sub{color:rgba(255,255,255,.45);font-size:11px;margin-top:2px}
+.nav-sec{padding:10px 0 2px}
+.nav-lbl{color:rgba(255,255,255,.35);font-size:10px;font-weight:600;padding:0 16px 5px;letter-spacing:.08em;text-transform:uppercase}
+.nav-item{display:flex;align-items:center;gap:9px;padding:8px 16px;font-size:13px;color:rgba(255,255,255,.65);cursor:pointer;border-left:3px solid transparent;transition:all .15s}
+.nav-item:hover{background:rgba(255,255,255,.07);color:rgba(255,255,255,.9)}
+.nav-item.active{background:rgba(255,255,255,.1);color:#fff;border-left-color:var(--amber)}
+.nav-badge{margin-left:auto;background:var(--amber);color:#fff;border-radius:10px;padding:1px 7px;font-size:10px;font-weight:700}
+.sid-footer{margin-top:auto;padding:12px 16px;border-top:1px solid rgba(255,255,255,.08)}
+.sid-user{display:flex;align-items:center;gap:8px;margin-bottom:8px}
+.av{width:30px;height:30px;border-radius:50%;background:var(--amber);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:#fff;flex-shrink:0}
+.av-name{color:rgba(255,255,255,.85);font-size:12px;font-weight:500}
+.av-role{color:rgba(255,255,255,.4);font-size:10px}
+.logout-btn{width:100%;padding:5px;background:rgba(255,255,255,.08);color:rgba(255,255,255,.6);border:none;border-radius:6px;font-size:12px;cursor:pointer}
+.logout-btn:hover{background:rgba(255,255,255,.15);color:#fff}
+/* TOPBAR */
+.topbar{background:#fff;border-bottom:1px solid var(--border);padding:0 20px;height:52px;display:flex;align-items:center;justify-content:space-between;flex-shrink:0}
+.topbar-title{font-size:15px;font-weight:600;color:var(--text)}
+/* CONTENT */
+.content{flex:1;overflow-y:auto;padding:20px}
+.view{display:none}.view.active{display:block}
+/* KPI */
+.kpi-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:20px}
+.kpi{background:#fff;border-radius:10px;padding:14px 16px;border:1px solid var(--border)}
+.kpi-lbl{font-size:11px;color:var(--muted);font-weight:500;text-transform:uppercase;letter-spacing:.04em;margin-bottom:6px}
+.kpi-val{font-size:26px;font-weight:700;color:var(--text);line-height:1}
+.kpi-sub{font-size:11px;color:var(--muted);margin-top:5px}
+/* PANEL */
+.panel{background:#fff;border-radius:10px;border:1px solid var(--border);margin-bottom:16px;overflow:hidden}
+.panel-hdr{padding:12px 16px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap}
+.panel-title{font-size:13px;font-weight:600;color:var(--text)}
+.panel-body{padding:16px}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+/* BUTTONS */
+.btn{display:inline-flex;align-items:center;gap:5px;padding:7px 14px;border-radius:7px;font-size:13px;font-weight:500;cursor:pointer;border:1px solid var(--border);background:#fff;color:var(--text);transition:all .12s}
+.btn:hover{background:var(--g100)}
+.btn-primary{background:var(--navy);color:#fff;border-color:var(--navy)}
+.btn-primary:hover{background:var(--navy-l)}
+.btn-success{background:var(--green-bg);color:var(--green);border-color:#86efac}
+.btn-danger{background:var(--red-bg);color:var(--red);border-color:#fca5a5}
+.btn-amber{background:var(--amber-bg);color:var(--amber);border-color:#fcd34d}
+.btn-sm{padding:4px 10px;font-size:12px;border-radius:6px}
+.btn-xs{padding:2px 8px;font-size:11px;border-radius:5px}
+/* TABLE */
+.tbl-wrap{overflow-x:auto}
+table{width:100%;border-collapse:collapse;font-size:12px}
+thead th{background:var(--g50);padding:8px 10px;text-align:left;font-size:11px;color:var(--muted);font-weight:600;border-bottom:1px solid var(--border);white-space:nowrap;text-transform:uppercase;letter-spacing:.04em}
+tbody td{padding:8px 10px;border-bottom:1px solid var(--border);vertical-align:middle}
+tbody tr:hover td{background:var(--g50)}
+tbody tr:last-child td{border-bottom:none}
+/* BADGES */
+.badge{display:inline-flex;align-items:center;padding:2px 8px;border-radius:20px;font-size:10px;font-weight:600;white-space:nowrap}
+.b-pend-b{background:var(--amber-bg);color:var(--amber)}
+.b-pend-c{background:var(--blue-bg);color:var(--blue)}
+.b-aprov{background:var(--green-bg);color:var(--green)}
+.b-rech{background:var(--red-bg);color:var(--red)}
+.b-late{background:var(--orange-bg);color:var(--orange)}
+.b-abierta{background:var(--blue-bg);color:var(--blue)}
+.b-pagada{background:var(--green-bg);color:var(--green)}
+.b-gray{background:var(--g100);color:var(--g600)}
+.b-purple{background:var(--purple-bg);color:var(--purple)}
+/* DETAIL ROW */
+.det-row{display:none;background:var(--g50)}.det-row.open{display:table-row}
+.det-inner{padding:0 10px 12px}
+.late-alert{background:var(--orange-bg);border-left:3px solid #f97316;border-radius:0 6px 6px 0;padding:7px 11px;font-size:12px;color:var(--orange);margin-bottom:8px}
+.disc-alert{background:var(--red-bg);border-left:3px solid #ef4444;border-radius:0 6px 6px 0;padding:7px 11px;font-size:12px;color:var(--red);margin-bottom:6px}
+.det-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:6px 14px;font-size:12px;margin-bottom:10px}
+.det-grid .dl{color:var(--muted);font-size:11px}.det-grid .dv{font-weight:500;margin-top:1px}
+.det-grid .dv-late{font-weight:600;color:var(--orange);margin-top:1px}
+.det-actions{display:flex;gap:7px;flex-wrap:wrap}
+/* FORM */
+.form-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.form-group{display:flex;flex-direction:column;gap:5px}
+.form-group.full{grid-column:1/-1}
+.form-label{font-size:12px;font-weight:500;color:var(--text)}
+.req{color:var(--red);margin-left:2px}
+.form-note{font-size:11px;color:var(--muted)}
+input,select,textarea{width:100%;padding:8px 10px;border:1px solid var(--border);border-radius:7px;font-size:13px;color:var(--text);background:#fff;outline:none;font-family:inherit}
+input:focus,select:focus,textarea:focus{border-color:var(--navy);box-shadow:0 0 0 3px rgba(27,58,92,.1)}
+textarea{resize:vertical;min-height:65px}
+/* VALIDATION BOX */
+.val-box{border-radius:8px;padding:10px 13px;font-size:13px;margin-bottom:12px}
+.val-ok{background:var(--green-bg);color:var(--green);border:1px solid #86efac}
+.val-err{background:var(--red-bg);color:var(--red);border:1px solid #fca5a5}
+.val-warn{background:var(--amber-bg);color:var(--amber);border:1px solid #fcd34d}
+/* MODAL */
+.modal-bg{display:none;position:fixed;inset:0;background:rgba(0,0,0,.4);z-index:100;align-items:center;justify-content:center}
+.modal-bg.open{display:flex}
+.modal{background:#fff;border-radius:12px;width:600px;max-width:95vw;max-height:90vh;overflow-y:auto;box-shadow:0 20px 60px rgba(0,0,0,.2)}
+.modal-hdr{padding:14px 18px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between}
+.modal-title{font-size:15px;font-weight:600}
+.modal-body{padding:18px}
+.modal-ftr{padding:12px 18px;border-top:1px solid var(--border);display:flex;gap:8px;justify-content:flex-end}
+/* FILTERS */
+.filters{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:14px;padding:12px 14px;background:#fff;border-radius:8px;border:1px solid var(--border)}
+.filters select,.filters input[type=date],.filters input[type=text]{width:auto;padding:6px 9px;font-size:12px}
+.filters label{font-size:11px;color:var(--muted);font-weight:500}
+/* PLANILLA CARD */
+.plt-card{background:#fff;border:1px solid var(--border);border-radius:10px;padding:14px 16px;margin-bottom:12px}
+.plt-hdr{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:10px;gap:10px;flex-wrap:wrap}
+.plt-title{font-size:14px;font-weight:600;color:var(--text)}
+.plt-ndoc{font-size:11px;color:var(--blue);font-weight:500;margin-top:2px}
+.plt-sub{font-size:11px;color:var(--muted);margin-top:2px}
+.plt-stats{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:10px}
+.plt-stat{background:var(--g50);border-radius:6px;padding:7px 10px}
+.plt-stat .lbl{font-size:10px;color:var(--muted)}
+.plt-stat .val{font-size:15px;font-weight:600;color:var(--text)}
+.plt-actions{display:flex;gap:6px;flex-wrap:wrap;margin-top:10px;padding-top:10px;border-top:1px solid var(--border)}
+.plt-regs{margin-top:10px;border-top:1px solid var(--border);padding-top:8px;max-height:180px;overflow-y:auto}
+.plt-reg-row{display:grid;grid-template-columns:1fr auto 28px;align-items:center;gap:8px;font-size:12px;padding:5px 0;border-bottom:.5px solid var(--border)}
+.plt-reg-row:last-child{border:none}
+/* TOAST */
+.toast-wrap{position:fixed;bottom:20px;right:20px;z-index:200;display:flex;flex-direction:column;gap:7px}
+.toast{background:#fff;border:1px solid var(--border);border-radius:8px;padding:9px 13px;font-size:13px;box-shadow:0 2px 8px rgba(0,0,0,.1);display:flex;align-items:center;gap:8px;min-width:220px;animation:si .2s ease}
+.toast-ok{border-left:4px solid #16a34a}.toast-err{border-left:4px solid #dc2626}
+@keyframes si{from{transform:translateX(30px);opacity:0}to{transform:translateX(0);opacity:1}}
+/* BAR CHART */
+.bar-chart{display:flex;flex-direction:column;gap:8px}
+.bar-row{display:flex;align-items:center;gap:10px}
+.bar-lbl{width:90px;font-size:12px;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;flex-shrink:0}
+.bar-track{flex:1;height:10px;background:var(--g200);border-radius:5px;overflow:hidden}
+.bar-fill{height:100%;border-radius:5px}
+.bar-val{width:48px;font-size:12px;color:var(--muted);text-align:right;flex-shrink:0}
+.empty{text-align:center;padding:36px 20px;color:var(--muted)}
+.empty-icon{font-size:36px;margin-bottom:8px}
+/* Section title */
+.sec-title{font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);margin-bottom:10px;padding-bottom:6px;border-bottom:1px solid var(--border)}
+@media(max-width:900px){.kpi-grid{grid-template-columns:repeat(2,1fr)}.det-grid{grid-template-columns:repeat(2,1fr)}.grid2{grid-template-columns:1fr}.form-grid{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+
+<!-- LOGIN -->
+<div id="login-screen" class="login-wrap">
+  <div class="login-card">
+    <div class="login-logo">
+      <div class="brand">Alquimaq</div>
+      <div class="sub">Portal de Control de Horas de Maquinaria</div>
+    </div>
+    <div style="margin-bottom:12px">
+      <div class="form-group" style="margin-bottom:10px"><label class="form-label">Correo electrónico</label>
+        <input id="li-email" type="email" placeholder="usuario@empresa.com" value="fdiaz@alquimaq.com"></div>
+      <div class="form-group"><label class="form-label">Contraseña</label>
+        <input id="li-pass" type="password" value="1234" onkeydown="if(event.key==='Enter')doLogin()"></div>
+    </div>
+    <button class="btn btn-primary" style="width:100%" onclick="doLogin()">Entrar</button>
+    <div class="login-err" id="login-err"></div>
+    <div class="login-hint">
+      <strong>Usuarios de prueba (contraseña: 1234)</strong><br>
+      fdiaz@alquimaq.com — Admin Alquimaq<br>
+      rsanchez@alquimaq.com — Controlador Alquimaq<br>
+      mcastro@produmar.com — Controlador Cliente<br>
+      lmora@produmar.com — Supervisor Cliente<br>
+      jmedina@produmar.com — Coordinador<br>
+      atorres@maqlopez.com — Admin Proveedor
+    </div>
+  </div>
+</div>
+
+<!-- APP -->
+<div id="app-screen" class="app" style="display:none">
+  <nav class="sidebar">
+    <div class="logo"><div class="logo-brand">Alquimaq</div><div class="logo-sub" id="sid-sub">Portal de Control</div></div>
+    <div id="nav-menu"></div>
+    <div class="sid-footer">
+      <div class="sid-user">
+        <div class="av" id="sid-av">—</div>
+        <div><div class="av-name" id="sid-name">—</div><div class="av-role" id="sid-role">—</div></div>
+      </div>
+      <button class="logout-btn" onclick="doLogout()">Cerrar sesión</button>
+    </div>
+  </nav>
+  <div class="main">
+    <div class="topbar">
+      <div class="topbar-title" id="page-title">—</div>
+      <div style="display:flex;gap:8px;align-items:center" id="topbar-actions"></div>
+    </div>
+    <div class="content" id="main-content"></div>
+  </div>
+</div>
+
+<!-- MODAL APROBACIÓN -->
+<div class="modal-bg" id="modal-accion">
+  <div class="modal">
+    <div class="modal-hdr"><div class="modal-title" id="mac-title">Acción</div><button class="btn btn-sm" onclick="closeModal('modal-accion')">✕</button></div>
+    <div class="modal-body">
+      <div id="mac-detail" style="margin-bottom:12px;font-size:13px;background:var(--g50);border-radius:7px;padding:10px 12px;line-height:1.9"></div>
+      <div class="form-group"><label class="form-label">Observación <span id="mac-req" style="color:var(--red)"></span></label>
+        <textarea id="mac-notas" rows="3" placeholder="Observación del supervisor..."></textarea></div>
+    </div>
+    <div class="modal-ftr">
+      <button class="btn" onclick="closeModal('modal-accion')">Cancelar</button>
+      <button class="btn" id="mac-ok" onclick="confirmarAccion()">Confirmar</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL AGREGAR -->
+<div class="modal-bg" id="modal-add">
+  <div class="modal">
+    <div class="modal-hdr"><div class="modal-title" id="madd-title">Agregar</div><button class="btn btn-sm" onclick="closeModal('modal-add')">✕</button></div>
+    <div class="modal-body" id="madd-body"></div>
+    <div class="modal-ftr">
+      <button class="btn" onclick="closeModal('modal-add')">Cancelar</button>
+      <button class="btn btn-primary" id="madd-ok">Guardar</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast-wrap" id="toasts"></div>
+
+<script>
+let U = null, pendingAction = null, currentView = '';
+
+const ROL_LABELS = { admin_b:'Admin Alquimaq', controlador_b:'Controlador Alquimaq', controlador_c:'Controlador Cliente', supervisor_c:'Supervisor Cliente', coordinador_c:'Coordinador', admin_prov:'Admin Proveedor' };
+const SL = { pendiente_b:'Pendiente Alquimaq', pendiente_c:'Pendiente Cliente', aprobado_c:'Aprobado ✓', rechazado_b:'Rechazado Alquimaq', rechazado_c:'Rechazado Cliente' };
+
+// ── AUTH ──────────────────────────────────────────────────────────
+async function doLogin() {
+  document.getElementById('login-err').textContent = '';
+  const r = await fetch('/api/login',{method:'POST',headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({email:document.getElementById('li-email').value,password:document.getElementById('li-pass').value})});
+  if (!r.ok) { document.getElementById('login-err').textContent='Credenciales incorrectas'; return; }
+  U = await r.json();
+  document.getElementById('login-screen').style.display = 'none';
+  document.getElementById('app-screen').style.display = 'flex';
+  initApp();
+}
+function doLogout() { U=null; document.getElementById('app-screen').style.display='none'; document.getElementById('login-screen').style.display='flex'; }
+
+// ── INIT ──────────────────────────────────────────────────────────
+function initApp() {
+  document.getElementById('sid-av').textContent = U.nombre.split(' ').map(w=>w[0]).slice(0,2).join('');
+  document.getElementById('sid-name').textContent = U.nombre;
+  document.getElementById('sid-role').textContent = ROL_LABELS[U.rol]||U.rol;
+  document.getElementById('sid-sub').textContent = U.actor==='b'?'Alquimaq':U.actor==='a'?'Proveedor':'Cliente';
+  buildNav(); updateBadges();
+  const first = getMenus()[0]?.items[0];
+  if (first) { const el=document.querySelector('.nav-item'); goTo(first.view,first.label,el); }
+}
+
+function getMenus() {
+  if (U.rol==='admin_b') return [
+    {label:'Supervisor',items:[{view:'pend-b',label:'Pendientes Alquimaq',icon:'⏳',badge:'pend-b'},{view:'pend-c',label:'Pendientes Cliente',icon:'🔄',badge:'pend-c'},{view:'historial',label:'Historial de Documentos',icon:'📋'}]},
+    {label:'Planillas',items:[{view:'plan-prov',label:'Planillas Proveedores',icon:'📆'},{view:'plan-cli',label:'Planillas Clientes',icon:'📊'}]},
+    {label:'Administración',items:[{view:'dashboard',label:'Dashboard',icon:'📈'},{view:'maquinas',label:'Maquinaria',icon:'🚜'},{view:'clientes',label:'Clientes',icon:'🏢'},{view:'proveedores',label:'Proveedores',icon:'🔩'},{view:'fincas',label:'Fincas',icon:'🌿'},{view:'usuarios',label:'Usuarios',icon:'👥'},{view:'nuevo-doc',label:'Nuevo Documento',icon:'➕'}]}
+  ];
+  if (U.rol==='controlador_b') return [
+    {label:'Trabajo',items:[{view:'pend-b',label:'Pendientes (mi aprobación)',icon:'⏳',badge:'pend-b'},{view:'pend-c',label:'Pendientes Cliente',icon:'🔄',badge:'pend-c'},{view:'historial',label:'Historial',icon:'📋'}]},
+    {label:'Planillas',items:[{view:'plan-prov',label:'Planillas Proveedores',icon:'📆'},{view:'plan-cli',label:'Planillas Clientes',icon:'📊'}]},
+    {label:'Catálogos',items:[{view:'maquinas',label:'Maquinaria',icon:'🚜'},{view:'clientes',label:'Clientes',icon:'🏢'},{view:'proveedores',label:'Proveedores',icon:'🔩'},{view:'usuarios',label:'Usuarios',icon:'👥'},{view:'fincas',label:'Fincas',icon:'🌿'},{view:'nuevo-doc',label:'Nuevo Documento',icon:'➕'}]}
+  ];
+  if (U.rol==='controlador_c') return [
+    {label:'Trabajo',items:[{view:'pend-c',label:'Pendientes (mi aprobación)',icon:'⏳',badge:'pend-c'},{view:'historial',label:'Historial',icon:'📋'}]}
+  ];
+  if (U.rol==='supervisor_c') return [
+    {label:'Trabajo',items:[{view:'pend-c',label:'Pendientes de aprobación',icon:'⏳',badge:'pend-c'},{view:'historial',label:'Historial',icon:'📋'}]}
+  ];
+  if (U.rol==='coordinador_c') return [
+    {label:'Trabajo',items:[{view:'plan-cli',label:'Planillas',icon:'✅',badge:'plan-cli'},{view:'historial',label:'Historial',icon:'📋'}]},
+    {label:'Mi empresa',items:[{view:'fincas',label:'Fincas',icon:'🌿'},{view:'usuarios',label:'Usuarios',icon:'👥'}]}
+  ];
+  if (U.rol==='admin_prov') return [
+    {label:'Trabajo',items:[{view:'plan-prov',label:'Mis planillas',icon:'📆'},{view:'historial',label:'Documentos',icon:'📋'}]}
+  ];
+}
+
+/* if (U.rol==='coordinador_c') return [
+    {label:'Trabajo',items:[{view:'plan-cli',label:'Planillas',icon:'✅',badge:'plan-cli'},{view:'historial',label:'Historial',icon:'📋'}]}
+  ];
+  if (U.rol==='admin_prov') return [
+    {label:'Trabajo',items:[{view:'plan-prov',label:'Mis planillas',icon:'📆'},{view:'historial',label:'Documentos',icon:'📋'}]}
+  ];
+  return [];
+}*/
+
+function buildNav() {
+  const nav = document.getElementById('nav-menu'); nav.innerHTML = '';
+  getMenus().forEach(sec => {
+    const s = document.createElement('div'); s.className='nav-sec';
+    if (sec.label) s.innerHTML=`<div class="nav-lbl">${sec.label}</div>`;
+    sec.items.forEach(item => {
+      const d = document.createElement('div'); d.className='nav-item';
+      d.innerHTML=`${item.icon} ${item.label}${item.badge?`<span class="nav-badge" id="badge-${item.badge}">0</span>`:''}`;
+      d.onclick = e => goTo(item.view, item.label, d);
+      s.appendChild(d);
+    });
+    nav.appendChild(s);
+  });
+}
+
+function goTo(view, label, el) {
+  document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));
+  if (el) el.classList.add('active');
+  document.getElementById('page-title').textContent = label||view;
+  document.getElementById('topbar-actions').innerHTML = '';
+  currentView = view;
+  renderView(view);
+}
+
+// ── HELPERS ───────────────────────────────────────────────────────
+const api = (url,opts={})=>fetch(url,opts).then(r=>r.json());
+function fD(d){if(!d)return'—';return new Date(d+'T12:00:00').toLocaleDateString('es-EC');}
+function fDT(d){if(!d)return'—';return new Date(d).toLocaleString('es-EC',{day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit'});}
+function toast(msg,type='ok'){const d=document.createElement('div');d.className=`toast toast-${type}`;d.textContent=(type==='ok'?'✓ ':'✕ ')+msg;document.getElementById('toasts').appendChild(d);setTimeout(()=>d.remove(),3500);}
+function openModal(id){document.getElementById(id).classList.add('open');}
+function closeModal(id){document.getElementById(id).classList.remove('open');}
+function toggleDet(id){const e=document.getElementById(id);if(e)e.classList.toggle('open');}
+
+function badgeStatus(s,tardio){
+  if(tardio&&s==='pendiente_b') return '<span class="badge b-late">Tardío</span>';
+  const m={pendiente_b:'b-pend-b Pendiente Alquimaq',pendiente_c:'b-pend-c Pendiente Cliente',aprobado_c:'b-aprov Aprobado ✓',rechazado_b:'b-rech Rechazado Alquimaq',rechazado_c:'b-rech Rechazado Cliente'};
+  const v=m[s]; if(!v) return s;
+  const [cls,...rest]=v.split(' ');
+  return `<span class="badge ${cls}">${rest.join(' ')}</span>`;
+}
+
+function badgePlt(s){
+  const m={abierta:'b-abierta Abierta',pendiente_factura:'b-pend-b Pend. factura',facturada:'b-purple Facturada',pagada:'b-pagada Pagada ✓',pendiente_recepcion:'b-pend-c Pend. recepción'};
+  const v=m[s]||'b-gray '+s; const [cls,...rest]=v.split(' ');
+  return `<span class="badge ${cls}">${rest.join(' ')}</span>`;
+}
+
+function docDetail(r) {
+  const mn = r.manana_inicio&&r.manana_fin ? `${r.manana_inicio} → ${r.manana_fin} (${r.horas_manana}h)` : '—';
+  const td = r.tarde_inicio&&r.tarde_fin   ? `${r.tarde_inicio} → ${r.tarde_fin} (${r.horas_tarde}h)` : '—';
+  // CAMBIO 7: solo mostrar botones si el estado permite acción
+  const esControladorB = U.rol==='controlador_b' && (!r.supervisor_alquimaq || r.supervisor_alquimaq===U.nombre);
+  const puedeAccionB = r.status==='pendiente_b'&&(U.rol==='admin_b'||esControladorB);
+  const esControladorC = U.rol==='controlador_c' && (!r.supervisor_cliente || r.supervisor_cliente===U.nombre);
+  const puedeAccionC = r.status==='pendiente_c'&&(U.rol==='supervisor_c'||esControladorC);
+  return `<div class="det-inner">
+    ${r.registro_tardio?`<div class="late-alert">⚠ Tardío — registrado el ${fDT(r.fecha_registro)} para horas del ${fD(r.fecha_trabajo)}.</div>`:''}
+    ${r.discrepancia_horas?`<div class="disc-alert">⚠ Discrepancia: rangos ${r.horas_rangos}h ≠ declarado ${r.total_horas_declaradas}h</div>`:''}
+    ${r.discrepancia_horometro?`<div class="disc-alert">⚠ Horómetro: Δ${r.horometro_diferencia}h ≠ declarado ${r.total_horas_declaradas}h</div>`:''}
+    <div class="det-grid">
+      <div><div class="dl">No. Documento</div><div class="dv" style="color:var(--blue)">${r.num_documento}</div></div>
+      <div><div class="dl">Cliente</div><div class="dv">${r.cliente_nombre}</div></div>
+      <div><div class="dl">Proyecto</div><div class="dv">${r.proyecto_nombre}</div></div>
+      <div><div class="dl">Operario</div><div class="dv">${r.operario_nombre}</div></div>
+      <div><div class="dl">Cédula</div><div class="dv">${r.cedula}</div></div>
+      <div><div class="dl">Máquina</div><div class="dv">${r.maquina_placa} · ${r.maquina_desc}</div></div>
+      <div><div class="dl">Propietario</div><div class="dv">${r.es_proveedor?`Prov: ${r.proveedor_nombre||''}`:'Alquimaq'}</div></div>
+      <div><div class="dl">Finca</div><div class="dv">${r.finca||'—'}</div></div>
+      <div><div class="dl">Área</div><div class="dv">${r.area||'—'}</div></div>
+      <div><div class="dl">Obra</div><div class="dv">${r.obra||'—'}</div></div>
+      <div><div class="dl">Combustible</div><div class="dv">${r.combustible||'—'}</div></div>
+      <div><div class="dl">Jornada mañana</div><div class="dv">${mn}</div></div>
+      <div><div class="dl">Jornada tarde</div><div class="dv">${td}</div></div>
+      <div><div class="dl">Total horas</div><div class="dv" style="color:var(--navy);font-weight:700">${r.total_horas_declaradas} h</div></div>
+      <div><div class="dl">Horómetro</div><div class="dv">${r.horometro_inicio||'—'} → ${r.horometro_fin||'—'} (Δ${r.horometro_diferencia??'—'}h)</div></div>
+      <div><div class="dl">Controlador Alquimaq</div><div class="dv">${r.supervisor_alquimaq||'—'}</div></div>
+      <div><div class="dl">Controlador Cliente</div><div class="dv">${r.supervisor_cliente||'—'}</div></div>
+      <div><div class="dl">Supervisor Cliente</div><div class="dv">${r.supervisor_cliente_sup||'—'}</div></div>
+      <div><div class="dl">Observaciones</div><div class="dv">${r.observaciones||'—'}</div></div>
+      ${r.aprobacion_b?`<div><div class="dl">Aprobado Alquimaq</div><div class="dv">${r.aprobacion_b.nombre} · ${fDT(r.aprobacion_b.fecha)}</div></div>`:''}
+      ${r.aprobacion_c?`<div><div class="dl">Aprobado Cliente</div><div class="dv">${r.aprobacion_c.nombre} · ${fDT(r.aprobacion_c.fecha)}</div></div>`:''}
+    </div>
+    <div class="det-actions">
+      ${puedeAccionB?`<button class="btn btn-success btn-sm" onclick="abrirAccion('${r.id}','aprobar_b')">✓ Aprobar (Alquimaq)</button><button class="btn btn-danger btn-sm" onclick="abrirAccion('${r.id}','rechazar_b')">✕ Rechazar (Alquimaq)</button>`:''}
+      ${puedeAccionC?`<button class="btn btn-success btn-sm" onclick="abrirAccion('${r.id}','aprobar_c')">✓ Aprobar (Cliente)</button><button class="btn btn-danger btn-sm" onclick="abrirAccion('${r.id}','rechazar_c')">✕ Rechazar (Cliente)</button>`:''}
+      ${r.foto_url?`<a href="${r.foto_url}" target="_blank" class="btn btn-sm">📷 Ver foto</a>`:''}
+      ${puedeEditarDoc(r)?`<button class="btn btn-sm" onclick="abrirEditarDoc('${r.id}')">✏ Editar horas</button>`:''}
+    </div>
+  </div>`;
+}
+
+function docRow(r) {
+  // CAMBIO 7: botones solo si el estado lo permite
+  const esCtrlB = U.rol==='controlador_b' && (!r.supervisor_alquimaq || r.supervisor_alquimaq===U.nombre);
+  const puedeB = r.status==='pendiente_b'&&(U.rol==='admin_b'||esCtrlB);
+  const esCtrlC = U.rol==='controlador_c' && (!r.supervisor_cliente || r.supervisor_cliente===U.nombre);
+  const puedeC = r.status==='pendiente_c'&&(U.rol==='supervisor_c'||esCtrlC);
+  return `<tr onclick="toggleDet('det-${r.id}')" style="cursor:pointer">
+    <td style="color:var(--blue);font-weight:600;font-size:11px">${r.num_documento}</td>
+    <td>${r.cliente_nombre}</td>
+    <td><strong>${r.maquina_placa}</strong>${r.es_proveedor?'<span class="badge b-gray" style="margin-left:4px;font-size:9px">Prov</span>':''}</td>
+    <td>${r.proyecto_nombre}</td>
+    <td>
+      <div style="font-size:12px;font-weight:500">${fD(r.fecha_trabajo)}</div>
+      ${r.registro_tardio?`<div style="font-size:10px;color:var(--orange)">⚠ tardío</div>`:''}
+    </td>
+    <td><strong>${r.total_horas_declaradas} h</strong></td>
+    <td>${r.foto_url?'📷':'<span style="color:#ccc">—</span>'}</td>
+    <td>${badgeStatus(r.status,r.registro_tardio)}</td>
+    <td onclick="event.stopPropagation()">
+      ${puedeB?`<div style="display:flex;gap:3px"><button class="btn btn-xs btn-success" onclick="abrirAccion('${r.id}','aprobar_b')">✓</button><button class="btn btn-xs btn-danger" onclick="abrirAccion('${r.id}','rechazar_b')">✕</button></div>`:''}
+      ${puedeC?`<div style="display:flex;gap:3px"><button class="btn btn-xs btn-success" onclick="abrirAccion('${r.id}','aprobar_c')">✓ C</button><button class="btn btn-xs btn-danger" onclick="abrirAccion('${r.id}','rechazar_c')">✕</button></div>`:''}
+    </td>
+  </tr>
+  <tr class="det-row" id="det-${r.id}"><td colspan="9">${docDetail(r)}</td></tr>`;
+}
+
+function tblDocs(rows) {
+  if (!rows.length) return '<div class="empty"><div class="empty-icon">✅</div><div>Sin documentos en esta categoría</div></div>';
+  return `<div class="tbl-wrap"><table>
+    <thead><tr><th>No. Documento</th><th>Cliente</th><th>Máquina</th><th>Proyecto</th><th>Fecha trabajo</th><th>Horas</th><th>Foto</th><th>Estado</th><th>Acción</th></tr></thead>
+    <tbody>${rows.join('')}</tbody></table></div>`;
+}
+
+// ── VISTAS ────────────────────────────────────────────────────────
+async function renderView(v) {
+  const c = document.getElementById('main-content');
+  c.innerHTML = '<div style="padding:30px;text-align:center;color:var(--muted)">Cargando...</div>';
+  if (v==='pend-b')    await renderPendB(c);
+  else if (v==='pend-c')    await renderPendC(c);
+  else if (v==='historial') await renderHistorial(c);
+  else if (v==='plan-prov') await renderPlanProv(c);
+  else if (v==='plan-cli')  await renderPlanCli(c);
+  else if (v==='dashboard') await renderDashboard(c);
+  else if (v==='maquinas')  await renderMaquinas(c);
+  else if (v==='clientes')  await renderClientes(c);
+  else if (v==='proveedores') await renderProveedores(c);
+  else if (v==='usuarios')    await renderUsuarios(c);
+  else if (v==='fincas')      await renderFincas(c);
+  else if (v==='nuevo-doc') await renderNuevoDoc(c);
+  else c.innerHTML='<div class="empty"><div class="empty-icon">🚧</div><div>Vista en construcción</div></div>';
+}
+
+// CAMBIO 6: solo documentos del cliente propio
+async function renderPendB(c) {
+  document.getElementById('topbar-actions').innerHTML=`<button class="btn btn-sm" onclick="window.open('/api/export/documentos?status=pendiente_b','_blank')">⬇ Excel</button>`;
+  let url = '/api/documentos?status=pendiente_b';
+  if (U.cliente_id) url += `&cliente_id=${U.cliente_id}`;
+  const data = await api(url);
+  c.innerHTML=`<div class="panel"><div class="panel-hdr"><span class="panel-title">${data.length} documentos pendientes de aprobación Alquimaq</span></div>${tblDocs(data.map(docRow))}</div>`;
+}
+
+async function renderPendC(c) {
+  document.getElementById('topbar-actions').innerHTML=`<button class="btn btn-sm" onclick="window.open('/api/export/documentos?status=pendiente_c','_blank')">⬇ Excel</button>`;
+  let url = '/api/documentos?status=pendiente_c';
+  if (U.cliente_id) url += `&cliente_id=${U.cliente_id}`; // CAMBIO 6
+  const data = await api(url);
+  c.innerHTML=`<div class="panel"><div class="panel-hdr"><span class="panel-title">${data.length} documentos pendientes de aprobación Cliente</span></div>${tblDocs(data.map(docRow))}</div>`;
+}
+
+async function renderHistorial(c) {
+  document.getElementById('topbar-actions').innerHTML=`<button class="btn btn-sm" onclick="exportConFiltros()">⬇ Excel</button>`;
+  const clientes = await api('/api/clientes');
+  const todasMaquinas = await api('/api/maquinas');
+  // CAMBIO 1: proveedor solo ve sus máquinas en los filtros
+  const maquinas = U.proveedor_id
+    ? todasMaquinas.filter(m => m.propietario === U.proveedor_id)
+    : todasMaquinas;
+  const showCliFilter = U.rol !== 'admin_prov';
+  c.innerHTML=`
+    <div class="filters">
+      ${showCliFilter ? `<label>Cliente:</label>
+      <select id="fh-cli" onchange="loadHist()"><option value="">Todos</option>${clientes.map(e=>`<option value="${e.id}">${e.nombre}</option>`).join('')}</select>` : ''}
+      <label>Máquina:</label>
+      <select id="fh-maq" onchange="loadHist()"><option value="">Todas</option>${maquinas.map(m=>`<option value="${m.id}">${m.placa}</option>`).join('')}</select>
+      <label>Desde:</label><input type="date" id="fh-desde" onchange="loadHist()">
+      <label>Hasta:</label><input type="date" id="fh-hasta" onchange="loadHist()">
+      <label>Estado:</label>
+      <select id="fh-status" onchange="loadHist()">
+        <option value="">Todos</option>
+        <option value="pendiente_b">Pendiente Alquimaq</option>
+        <option value="pendiente_c">Pendiente Cliente</option>
+        <option value="aprobado_c">Aprobados</option>
+        <option value="rechazado_b">Rechazado Alquimaq</option>
+        <option value="rechazado_c">Rechazado Cliente</option>
+      </select>
+    </div>
+    <div class="panel" id="hist-panel"><div class="panel-hdr"><span class="panel-title" id="hist-count">—</span></div><div id="hist-content"></div></div>`;
+  await loadHist();
+}
+
+async function loadHist() {
+  let url='/api/documentos?';
+  const cli  = document.getElementById('fh-cli')?.value||'';
+  const maq  = document.getElementById('fh-maq')?.value||'';
+  const desde= document.getElementById('fh-desde')?.value||'';
+  const hasta= document.getElementById('fh-hasta')?.value||'';
+  const st   = document.getElementById('fh-status')?.value||'';
+  if (cli)  url+=`cliente_id=${cli}&`;
+  if (maq)  url+=`maquina_id=${maq}&`;
+  if (desde)url+=`desde=${desde}&`;
+  if (hasta)url+=`hasta=${hasta}&`;
+  if (st)   url+=`status=${st}&`;
+  if (U.cliente_id)   url+=`cliente_id=${U.cliente_id}&`;
+  if (U.proveedor_id) url+=`proveedor_id=${U.proveedor_id}&`; // solo sus máquinas
+  const data = await api(url);
+  document.getElementById('hist-count').textContent=`${data.length} documentos`;
+  document.getElementById('hist-content').innerHTML=tblDocs(data.map(docRow));
+}
+
+function exportConFiltros(){
+  let url='/api/export/documentos?';
+  const cli  = document.getElementById('fh-cli')?.value||'';
+  const desde= document.getElementById('fh-desde')?.value||'';
+  const hasta= document.getElementById('fh-hasta')?.value||'';
+  const st   = document.getElementById('fh-status')?.value||'';
+  if (cli)  url+=`cliente_id=${cli}&`;
+  if (desde)url+=`desde=${desde}&`;
+  if (hasta)url+=`hasta=${hasta}&`;
+  if (st)   url+=`status=${st}&`;
+  window.open(url,'_blank');
+}
+
+// ── PLANILLAS PROVEEDORES ─────────────────────────────────────────
+async function renderPlanProv(c) {
+  const proveedores = await api('/api/proveedores');
+  const maquinas    = await api('/api/maquinas');
+  c.innerHTML=`
+    <div class="filters">
+      <label>Proveedor:</label>
+      <select id="fp-prov" onchange="loadPlanProv()"><option value="">Todos</option>${proveedores.map(p=>`<option value="${p.id}">${p.nombre}</option>`).join('')}</select>
+      <label>Máquina:</label>
+      <select id="fp-placa" onchange="loadPlanProv()"><option value="">Todas</option>${maquinas.map(m=>`<option value="${m.placa}">${m.placa}</option>`).join('')}</select>
+      <label>Estado:</label>
+      <select id="fp-status" onchange="loadPlanProv()"><option value="">Todos</option><option value="abierta">Abierta</option><option value="pendiente_factura">Pend. factura</option><option value="facturada">Facturada</option><option value="pagada">Pagada</option></select>
+      <input type="text" id="fp-finca" placeholder="Filtrar finca..." oninput="loadPlanProv()" style="width:130px">
+      <input type="text" id="fp-area"  placeholder="Filtrar área..."  oninput="loadPlanProv()" style="width:120px">
+    </div>
+    <div id="plan-prov-content"></div>`;
+  await loadPlanProv();
+}
+
+async function loadPlanProv() {
+  let url='/api/planillas_prov?';
+  const prov  = document.getElementById('fp-prov')?.value||'';
+  const desde = document.getElementById('fp-desde')?.value||'';
+  const hasta = document.getElementById('fp-hasta')?.value||'';
+  const st    = document.getElementById('fp-status')?.value||'';
+  if (U.proveedor_id) url+=`proveedor_id=${U.proveedor_id}&`;
+  else if (prov) url+=`proveedor_id=${prov}&`;
+  if (desde) url+=`desde=${desde}&`;
+  if (hasta) url+=`hasta=${hasta}&`;
+  if (st)    url+=`status=${st}&`;
+  const placa = document.getElementById('fp-placa')?.value||'';
+  const finca = document.getElementById('fp-finca')?.value||'';
+  const area  = document.getElementById('fp-area')?.value||'';
+  if (placa) url+=`placa=${encodeURIComponent(placa)}&`;
+  if (finca) url+=`finca=${encodeURIComponent(finca)}&`;
+  if (area)  url+=`area=${encodeURIComponent(area)}&`;
+  const data = await api(url);
+  const cont = document.getElementById('plan-prov-content');
+  cont.innerHTML = data.length ? data.map(planProvCard).join('') : '<div class="empty"><div class="empty-icon">📆</div><div>Sin planillas</div></div>';
+}
+
+function planProvCard(p) {
+  const canCerrar = (U.rol==='supervisor_b'||U.rol==='admin_b') && p.status==='abierta';
+  const canFact   = U.rol==='admin_prov' && p.status==='pendiente_factura';
+  const canPagar  = (U.rol==='supervisor_b'||U.rol==='admin_b') && p.status==='facturada';
+  return `<div class="plt-card">
+    <div class="plt-hdr">
+      <div>
+        <div class="plt-title">Planilla · ${p.proveedor_nombre}</div>
+        ${p.num_documento?`<div class="plt-ndoc">📄 ${p.num_documento}</div>`:''}
+        <div class="plt-sub">Desde ${fD(p.creada_en)}${p.cerrada_en?' — '+fD(p.cerrada_en):' — <em>abierta</em>'}</div>
+      </div>
+      ${badgePlt(p.status)}
+    </div>
+    <div class="plt-stats">
+      <div class="plt-stat"><div class="lbl">Total horas</div><div class="val">${p.total_horas} h</div></div>
+      <div class="plt-stat"><div class="lbl">Monto</div><div class="val">$${(p.total_monto||0).toFixed(2)}</div></div>
+      <div class="plt-stat"><div class="lbl">Documentos</div><div class="val">${p.documentos_ids.length}</div></div>
+    </div>
+    ${canCerrar?`<div style="font-size:11px;color:var(--muted);margin:6px 0 2px">Selecciona los documentos a cerrar:</div>
+    <div style="display:flex;gap:6px;margin-bottom:6px">
+      <button class="btn btn-xs" onclick="selAllChk('.pp-chk-${p.id}',true)">✓ Todos</button>
+      <button class="btn btn-xs" onclick="selAllChk('.pp-chk-${p.id}',false)">✗ Ninguno</button>
+    </div>`:''}
+    <div class="plt-regs">${(p.documentos||[]).map(r=>`
+      <div class="plt-reg-row">
+        <span>${r.num_documento} · ${r.maquina_placa} · ${r.fecha_trabajo} · ${r.finca||'—'} · ${r.area||'—'}</span>
+        <span style="text-align:right;white-space:nowrap"><strong>${r.total_horas_declaradas}h</strong> × $${r.tarifa_a_b||0} = $${((r.total_horas_declaradas||0)*(r.tarifa_a_b||0)).toFixed(2)}</span>
+        <span style="text-align:center">${canCerrar?`<input type="checkbox" class="pp-chk-${p.id}" value="${r.id}">`:'&nbsp;'}</span>
+      </div>`).join('') || '<div style="color:var(--muted);font-size:12px;padding:4px 0">Sin documentos aún</div>'}</div>
+    <div class="plt-actions">
+      ${canCerrar?`<button class="btn btn-primary btn-sm" onclick="cerrarParcialProv('${p.id}')">🔒 Cerrar seleccionados</button>`:''}
+      ${canFact  ?`<button class="btn btn-success btn-sm" onclick="accionPlanProv('${p.id}','facturar')">📄 Registrar factura</button>`:''}
+      ${canPagar ?`<button class="btn btn-amber btn-sm"   onclick="accionPlanProv('${p.id}','pagar')">💰 Confirmar pago</button>`:''}
+      ${p.num_documento?`<a href="/api/planillas_prov/${p.id}/pdf" target="_blank" class="btn btn-sm">⬇ PDF</a>`:''}
+    </div>
+  </div>`;
+}
+
+async function accionPlanProv(id, action) {
+  const body = {usuario_id:U.id};
+  if (action==='facturar') { const n=prompt('Número de factura del proveedor:'); if(!n) return; body.numero=n; }
+  const res = await api(`/api/planillas_prov/${id}/${action}`,{method:'PATCH',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
+  if (res.error) { toast(res.error,'err'); return; }
+  toast('Acción realizada correctamente'); loadPlanProv(); updateBadges();
+}
+
+// ── PLANILLAS CLIENTES ────────────────────────────────────────────
+async function renderPlanCli(c) {
+  const clientes = await api('/api/clientes');
+  const maquinas = await api('/api/maquinas');
+  const proyectos= await api('/api/proyectos');
+  c.innerHTML=`
+    <div class="filters">
+      <label>Cliente:</label>
+      <select id="fc-cli" onchange="loadPlanCli()"><option value="">Todos</option>${clientes.map(e=>`<option value="${e.id}">${e.nombre}</option>`).join('')}</select>
+      <label>Máquina:</label>
+      <select id="fc-placa" onchange="loadPlanCli()"><option value="">Todas</option>${maquinas.map(m=>`<option value="${m.placa}">${m.placa}</option>`).join('')}</select>
+      <label>Estado:</label>
+      <select id="fc-status" onchange="loadPlanCli()"><option value="">Todos</option><option value="abierta">Abierta</option><option value="pendiente_recepcion">Pend. recepción</option><option value="pendiente_factura">Pend. factura</option><option value="facturada">Facturada</option><option value="pagada">Pagada</option></select>
+      <input type="text" id="fc-finca" placeholder="Filtrar finca..." oninput="loadPlanCli()" style="width:130px">
+      <input type="text" id="fc-area"  placeholder="Filtrar área..."  oninput="loadPlanCli()" style="width:120px">
+    </div>
+    <div id="plan-cli-content"></div>`;
+  await loadPlanCli();
+}
+
+async function loadPlanCli() {
+  let url='/api/planillas_cliente?';
+  if (U.cliente_id) url+=`cliente_id=${U.cliente_id}&`;
+  else {
+    const cli = document.getElementById('fc-cli')?.value||'';
+    if (cli) url+=`cliente_id=${cli}&`;
+  }
+  const st    = document.getElementById('fc-status')?.value||'';
+  const desde = document.getElementById('fc-desde')?.value||'';
+  const hasta = document.getElementById('fc-hasta')?.value||'';
+  if (st)    url+=`status=${st}&`;
+  if (desde) url+=`desde=${desde}&`;
+  if (hasta) url+=`hasta=${hasta}&`;
+  const fcPlaca = document.getElementById('fc-placa')?.value||'';
+  const fcFinca = document.getElementById('fc-finca')?.value||'';
+  const fcArea  = document.getElementById('fc-area')?.value||'';
+  if (fcPlaca) url+=`placa=${encodeURIComponent(fcPlaca)}&`;
+  if (fcFinca) url+=`finca=${encodeURIComponent(fcFinca)}&`;
+  if (fcArea)  url+=`area=${encodeURIComponent(fcArea)}&`;
+  const data = await api(url);
+  const cont = document.getElementById('plan-cli-content');
+  cont.innerHTML = data.length ? data.map(planCliCard).join('') : '<div class="empty"><div class="empty-icon">📊</div><div>Sin planillas</div></div>';
+}
+
+function planCliCard(p) {
+  const canCerrar = (U.rol==='coordinador_c'||U.rol==='admin_b') && p.status==='abierta';
+  const canRecep  = (U.rol==='coordinador_c'||U.rol==='admin_b') && p.status==='pendiente_recepcion';
+  const canFact   = (U.rol==='controlador_b'||U.rol==='admin_b') && p.status==='pendiente_factura';
+  const canPagar  = (U.rol==='coordinador_c') && p.status==='facturada';
+  return `<div class="plt-card">
+    <div class="plt-hdr">
+      <div>
+        <div class="plt-title">Planilla · ${p.cliente_nombre}</div>
+        ${p.num_documento?`<div class="plt-ndoc">📄 ${p.num_documento}</div>`:''}
+        <div class="plt-sub">Desde ${fD(p.periodo_inicio)}${p.periodo_fin?' hasta '+fD(p.periodo_fin):' — <em>abierta, acumulando horas</em>'}</div>
+      </div>
+      ${badgePlt(p.status)}
+    </div>
+    <div class="plt-stats">
+      <div class="plt-stat"><div class="lbl">Horas aprobadas</div><div class="val">${p.total_horas} h</div></div>
+      <div class="plt-stat"><div class="lbl">Monto total</div><div class="val">$${(p.total_monto||0).toFixed(2)}</div></div>
+      <div class="plt-stat"><div class="lbl">Documentos</div><div class="val">${p.documentos_ids.length}</div></div>
+    </div>
+    ${canCerrar?`<div style="font-size:11px;color:var(--muted);margin:6px 0 2px">Selecciona los documentos a incluir en esta planilla:</div>
+    <div style="display:flex;gap:6px;margin-bottom:6px">
+      <button class="btn btn-xs" onclick="selAllChk('.pc-chk-${p.id}',true)">✓ Todos</button>
+      <button class="btn btn-xs" onclick="selAllChk('.pc-chk-${p.id}',false)">✗ Ninguno</button>
+    </div>`:''}
+    <div class="plt-regs">${(p.documentos||[]).map(r=>`
+      <div class="plt-reg-row">
+        <span>${r.num_documento} · ${r.maquina_placa} · ${r.fecha_trabajo} · ${r.finca||'—'} · ${r.area||'—'}</span>
+        <span style="text-align:right;white-space:nowrap"><strong>${r.total_horas_declaradas}h</strong> × $${r.tarifa_a_c||0} = $${((r.total_horas_declaradas||0)*(r.tarifa_a_c||0)).toFixed(2)}</span>
+        <span style="text-align:center">${canCerrar?`<input type="checkbox" class="pc-chk-${p.id}" value="${r.id}">`:'&nbsp;'}</span>
+      </div>`).join('') || '<div style="color:var(--muted);font-size:12px;padding:4px 0">Sin documentos aún</div>'}</div>
+    <div class="plt-actions">
+      ${canCerrar?`<button class="btn btn-primary btn-sm" onclick="cerrarParcialCli('${p.id}')">🔒 Cerrar seleccionados</button>`:''}
+      ${canRecep ?`<button class="btn btn-success btn-sm" onclick="accionPlanCli('${p.id}','recepcion')">📥 Emitir recepción del servicio</button>`:''}
+      ${canFact  ?`<button class="btn btn-primary btn-sm" onclick="accionPlanCli('${p.id}','facturar')">📄 Registrar factura</button>`:''}
+      ${canPagar ?`<button class="btn btn-amber btn-sm"   onclick="accionPlanCli('${p.id}','pagar')">💰 Confirmar pago</button>`:''}
+      ${p.num_documento?`<a href="/api/planillas_cliente/${p.id}/pdf" target="_blank" class="btn btn-sm">⬇ PDF</a>`:''}
+    </div>
+  </div>`;
+}
+
+async function accionPlanCli(id, action) {
+  const body = {usuario_id:U.id};
+  if (action==='facturar') { const n=prompt('Número de factura Alquimaq → Cliente:'); if(!n) return; body.numero=n; }
+  const res = await api(`/api/planillas_cliente/${id}/${action}`,{method:'PATCH',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
+  if (res.error) { toast(res.error,'err'); return; }
+  toast('Acción realizada'); loadPlanCli(); updateBadges();
+}
+
+// ── ACCIONES APROBACIÓN ───────────────────────────────────────────
+function abrirAccion(id, action) {
+  pendingAction = {id, action};
+  const isRech = action.includes('rechazar');
+  const labels = {aprobar_b:'Aprobar (Alquimaq)',rechazar_b:'Rechazar (Alquimaq)',aprobar_c:'Aprobar (Cliente)',rechazar_c:'Rechazar (Cliente)'};
+  document.getElementById('mac-title').textContent = labels[action]||action;
+  document.getElementById('mac-req').textContent   = isRech ? '*' : '';
+  const ok = document.getElementById('mac-ok');
+  ok.className = `btn ${isRech?'btn-danger':'btn-success'}`;
+  ok.textContent = isRech ? '✕ Confirmar rechazo' : '✓ Confirmar aprobación';
+  document.getElementById('mac-notas').value = '';
+  openModal('modal-accion');
+}
+
+async function confirmarAccion() {
+  const {id, action} = pendingAction;
+  const notas = document.getElementById('mac-notas').value;
+  if (action.includes('rechazar')&&!notas.trim()) { toast('Ingresa una razón para el rechazo','err'); return; }
+  const res = await api(`/api/documentos/${id}/${action}`,{method:'PATCH',headers:{'Content-Type':'application/json'},body:JSON.stringify({usuario_id:U.id,nombre:U.nombre,notas})});
+  if (res.error) { toast(res.error,'err'); return; }
+  closeModal('modal-accion');
+  toast(action.includes('aprobar')?'Documento aprobado':'Documento rechazado');
+  updateBadges(); renderView(currentView);
+}
+
+// ── DASHBOARD (CAMBIO 5) ──────────────────────────────────────────
+async function renderDashboard(c) {
+  const s = await api(`/api/stats?rol=${U.rol}`);
+  const maxM = Math.max(...(s.horasPorMaquina||[]).map(x=>x[1]),1);
+  const finBlock = (U.rol==='admin_b') ? `
+    <div class="kpi-grid" style="grid-template-columns:repeat(3,1fr);margin-top:0">
+      <div class="kpi"><div class="kpi-lbl">Cobrado a clientes (mes)</div><div class="kpi-val" style="color:var(--green)">$${(s.cobradoC||0).toFixed(0)}</div></div>
+      <div class="kpi"><div class="kpi-lbl">Pagado a proveedores (mes)</div><div class="kpi-val" style="color:var(--red)">$${(s.pagadoA||0).toFixed(0)}</div></div>
+      <div class="kpi"><div class="kpi-lbl">Margen Alquimaq (mes)</div><div class="kpi-val" style="color:var(--navy)">$${(s.margenB||0).toFixed(0)}</div><div class="kpi-sub">cobrado − pagado proveedores</div></div>
+    </div>` : '';
+  c.innerHTML=`
+    <div class="kpi-grid">
+      <div class="kpi"><div class="kpi-lbl">Pend. aprob. Alquimaq</div><div class="kpi-val" style="color:var(--amber)">${s.pendB}</div></div>
+      <div class="kpi"><div class="kpi-lbl">Pend. aprob. Cliente</div><div class="kpi-val" style="color:var(--blue)">${s.pendC}</div></div>
+      <div class="kpi"><div class="kpi-lbl">Horas aprobadas (mes)</div><div class="kpi-val">${s.horasAprobadas} h</div></div>
+      <div class="kpi"><div class="kpi-lbl">Clientes activos</div><div class="kpi-val">${s.clientesActivos}</div></div>
+    </div>
+    ${finBlock}
+    <div class="grid2">
+      <div class="panel"><div class="panel-hdr"><span class="panel-title">Horas por máquina (mes)</span></div>
+        <div class="panel-body"><div class="bar-chart">${(s.horasPorMaquina||[]).map(([k,v])=>`
+          <div class="bar-row"><div class="bar-lbl">${k}</div>
+          <div class="bar-track"><div class="bar-fill" style="width:${Math.round(v/maxM*100)}%;background:var(--navy)"></div></div>
+          <div class="bar-val">${v} h</div></div>`).join('')||'<div style="color:var(--muted)">Sin datos</div>'}</div></div></div>
+      <div class="panel"><div class="panel-hdr"><span class="panel-title">Estado general</span></div>
+        <div class="panel-body" style="font-size:13px;display:flex;flex-direction:column;gap:12px">
+          <div style="display:flex;justify-content:space-between"><span>Planillas clientes abiertas</span><strong>${s.plantillasAbiertas}</strong></div>
+          <div style="display:flex;justify-content:space-between"><span>Facturas pendientes</span><strong style="color:var(--red)">${s.facturasPendientes}</strong></div>
+        </div></div>
+    </div>`;
+}
+
+// ── CATÁLOGOS ─────────────────────────────────────────────────────
+
+// ── USUARIOS ──────────────────────────────────────────────────────
+async function renderUsuarios(c) {
+  //const [usuarios, clientes, proveedores] = await Promise.all([
+    //api('/api/usuarios'), api('/api/clientes'), api('/api/proveedores')
+  //]);
+  const urlUsuarios = U.cliente_id ? `/api/usuarios?cliente_id=${U.cliente_id}` : '/api/usuarios';
+const [usuarios, clientes, proveedores] = await Promise.all([
+  api(urlUsuarios), api('/api/clientes'), api('/api/proveedores')
+]);
+  const cMap = Object.fromEntries(clientes.map(x=>[x.id,x.nombre]));
+  const pMap = Object.fromEntries(proveedores.map(x=>[x.id,x.nombre]));
+  const ROL_OPTS = [
+    {val:'admin_b',        lbl:'Admin Alquimaq',         actor:'b'},
+    {val:'controlador_b',  lbl:'Controlador Alquimaq',   actor:'b'},
+    {val:'controlador_c',  lbl:'Controlador Cliente',     actor:'c'},
+    {val:'supervisor_c',   lbl:'Supervisor Cliente',      actor:'c'},
+    {val:'coordinador_c',  lbl:'Coordinador Cliente',     actor:'c'},
+    {val:'admin_prov',     lbl:'Admin Proveedor',         actor:'a'},
+  ];
+  document.getElementById('topbar-actions').innerHTML =
+    `<button class="btn btn-primary btn-sm" onclick="openModalUsuario()">+ Nuevo usuario</button>`;
+
+  const rows = usuarios.map(u => {
+    const empresa = u.actor==='c' ? (cMap[u.cliente_id]||'—') :
+                    u.actor==='a' ? (pMap[u.proveedor_id]||'—') : 'Alquimaq';
+    return `<tr>
+      <td><strong>${u.nombre}</strong></td>
+      <td>${u.email}</td>
+      <td><span class="badge ${rolBadge(u.rol)}">${ROL_LABELS[u.rol]||u.rol}</span></td>
+      <td>${empresa}</td>
+      <td>
+        <button class="btn btn-xs" onclick="editarUsuario(${JSON.stringify(JSON.stringify(u))})">✏ Editar</button>
+        <button class="btn btn-xs btn-danger" onclick="cambiarPassword('${u.id}','${u.nombre}')">🔑 Clave</button>
+      </td>
+    </tr>`;
+  }).join('');
+
+  c.innerHTML = `
+    <div class="panel">
+      <div class="panel-hdr"><span class="panel-title">Usuarios del sistema (${usuarios.length})</span></div>
+      <div class="tbl-wrap"><table>
+        <thead><tr><th>Nombre</th><th>Email</th><th>Rol</th><th>Empresa</th><th>Acciones</th></tr></thead>
+        <tbody>${rows||'<tr><td colspan=5 style="text-align:center;color:var(--muted)">Sin usuarios</td></tr>'}</tbody>
+      </table></div>
+    </div>
+    <!-- Modal nuevo/editar usuario -->
+    <div class="modal-bg" id="modal-usuario">
+      <div class="modal" style="width:520px">
+        <div class="modal-hdr">
+          <div class="modal-title" id="mu-title">Nuevo usuario</div>
+          <button class="btn btn-sm" onclick="closeModal('modal-usuario')">✕</button>
+        </div>
+        <div class="modal-body">
+          <input type="hidden" id="mu-id">
+          <div class="form-grid">
+            <div class="form-group full"><label class="form-label">Nombre completo <span class="req">*</span></label>
+              <input id="mu-nombre" placeholder="Juan Pérez" required></div>
+            <div class="form-group full"><label class="form-label">Email <span class="req">*</span></label>
+              <input id="mu-email" type="email" placeholder="juan@empresa.com" required></div>
+            <div class="form-group" id="mu-pass-grp"><label class="form-label">Contraseña <span class="req">*</span></label>
+              <input id="mu-pass" type="password" placeholder="Mínimo 4 caracteres"></div>
+            <div class="form-group"><label class="form-label">Rol <span class="req">*</span></label>
+              <select id="mu-rol" onchange="onRolChange()">${ROL_OPTS.map(r=>`<option value="${r.val}" data-actor="${r.actor}">${r.lbl}</option>`).join('')}</select></div>
+            <div class="form-group full" id="mu-cli-grp" style="display:none">
+              <label class="form-label">Empresa cliente <span class="req">*</span></label>
+              <select id="mu-cli">${clientes.map(c=>`<option value="${c.id}">${c.nombre}</option>`).join('')}</select>
+            </div>
+            <div class="form-group full" id="mu-prov-grp" style="display:none">
+              <label class="form-label">Proveedor <span class="req">*</span></label>
+              <select id="mu-prov">${proveedores.map(p=>`<option value="${p.id}">${p.nombre}</option>`).join('')}</select>
+            </div>
+          </div>
+          <div id="mu-err" style="color:var(--red);font-size:12px;margin-top:8px;display:none"></div>
+        </div>
+        <div class="modal-ftr">
+          <button class="btn" onclick="closeModal('modal-usuario')">Cancelar</button>
+          <button class="btn btn-primary" onclick="guardarUsuario()">Guardar usuario</button>
+        </div>
+      </div>
+    </div>`;
+
+  // Inicializar estado del select de rol
+  onRolChange();
+}
+
+function rolBadge(rol) {
+  const m = {admin_b:'b-aprov',controlador_b:'b-pend-c',controlador_c:'b-pend-b',
+    supervisor_c:'b-purple',coordinador_c:'b-amber',admin_prov:'b-gray'};
+  return m[rol]||'b-gray';
+}
+
+function onRolChange() {
+  const sel = document.getElementById('mu-rol'); if(!sel) return;
+  const actor = sel.options[sel.selectedIndex]?.dataset?.actor||'b';
+  const cli  = document.getElementById('mu-cli-grp');
+  const prov = document.getElementById('mu-prov-grp');
+  if (cli)  cli.style.display  = actor==='c' ? '' : 'none';
+  if (prov) prov.style.display = actor==='a' ? '' : 'none';
+}
+
+function openModalUsuario() {
+  document.getElementById('mu-id').value = '';
+  document.getElementById('mu-nombre').value = '';
+  document.getElementById('mu-email').value = '';
+  document.getElementById('mu-pass').value = '';
+  document.getElementById('mu-rol').selectedIndex = 0;
+  document.getElementById('mu-title').textContent = 'Nuevo usuario';
+  document.getElementById('mu-pass-grp').style.display = '';
+  document.getElementById('mu-err').style.display = 'none';
+  onRolChange();
+  openModal('modal-usuario');
+}
+
+function editarUsuario(jsonStr) {
+  const u = JSON.parse(jsonStr);
+  document.getElementById('mu-id').value    = u.id;
+  document.getElementById('mu-nombre').value = u.nombre;
+  document.getElementById('mu-email').value  = u.email;
+  document.getElementById('mu-pass').value  = '';
+  document.getElementById('mu-title').textContent = 'Editar usuario';
+  document.getElementById('mu-pass-grp').style.display = 'none'; // contraseña opcional al editar
+  document.getElementById('mu-err').style.display = 'none';
+  const sel = document.getElementById('mu-rol');
+  for (let i=0; i<sel.options.length; i++) if(sel.options[i].value===u.rol) sel.selectedIndex=i;
+  onRolChange();
+  if (u.cliente_id && document.getElementById('mu-cli')) {
+    const s = document.getElementById('mu-cli');
+    for (let i=0; i<s.options.length; i++) if(s.options[i].value===u.cliente_id) s.selectedIndex=i;
+  }
+  if (u.proveedor_id && document.getElementById('mu-prov')) {
+    const s = document.getElementById('mu-prov');
+    for (let i=0; i<s.options.length; i++) if(s.options[i].value===u.proveedor_id) s.selectedIndex=i;
+  }
+  openModal('modal-usuario');
+}
+
+async function guardarUsuario() {
+  const id     = document.getElementById('mu-id').value;
+  const nombre = document.getElementById('mu-nombre').value.trim();
+  const email  = document.getElementById('mu-email').value.trim();
+  const pass   = document.getElementById('mu-pass').value;
+  const rolSel = document.getElementById('mu-rol');
+  const rol    = rolSel.value;
+  const actor  = rolSel.options[rolSel.selectedIndex]?.dataset?.actor||'b';
+  const cli_id = document.getElementById('mu-cli')?.value||null;
+  const prov_id= document.getElementById('mu-prov')?.value||null;
+  const errEl  = document.getElementById('mu-err');
+
+  if (!nombre || !email) { errEl.textContent='Nombre y email son obligatorios'; errEl.style.display=''; return; }
+  if (!id && !pass) { errEl.textContent='La contraseña es obligatoria para nuevos usuarios'; errEl.style.display=''; return; }
+  if (actor==='c' && !cli_id) { errEl.textContent='Selecciona la empresa cliente'; errEl.style.display=''; return; }
+  if (actor==='a' && !prov_id) { errEl.textContent='Selecciona el proveedor'; errEl.style.display=''; return; }
+
+  const body = { nombre, email, rol, actor,
+    ...(pass ? {password:pass} : {}),
+    ...(actor==='c' ? {cliente_id:cli_id} : {}),
+    ...(actor==='a' ? {proveedor_id:prov_id} : {})
+  };
+
+  const url    = id ? `/api/usuarios/${id}` : '/api/usuarios';
+  const method = id ? 'PATCH' : 'POST';
+  const res = await api(url, {method, headers:{'Content-Type':'application/json'}, body:JSON.stringify(body)});
+  if (res.error) { errEl.textContent=res.error; errEl.style.display=''; return; }
+  closeModal('modal-usuario');
+  toast(id ? 'Usuario actualizado' : 'Usuario creado correctamente');
+  renderUsuarios(document.getElementById('main-content'));
+}
+
+async function cambiarPassword(id, nombre) {
+  const nueva = prompt(`Nueva contraseña para ${nombre}:`);
+  if (!nueva || nueva.length < 4) { if(nueva!==null) toast('Mínimo 4 caracteres','err'); return; }
+  const res = await api(`/api/usuarios/${id}`, {method:'PATCH', headers:{'Content-Type':'application/json'}, body:JSON.stringify({password:nueva})});
+  if (res.error) { toast(res.error,'err'); return; }
+  toast('Contraseña actualizada');
+}
+
+// ── FINCAS ────────────────────────────────────────────────────────────────────
+async function renderFincas(c) {
+  // Filtrar por cliente si es admin de cliente
+  const url = U.cliente_id ? `/api/fincas?cliente_id=${U.cliente_id}` : '/api/fincas';
+  const [fincas, clientes] = await Promise.all([api(url), api('/api/clientes')]);
+
+  document.getElementById('topbar-actions').innerHTML =
+    `<button class="btn btn-primary btn-sm" onclick="openModalFinca()">+ Agregar finca</button>`;
+
+  const rows = fincas.map(f => `<tr>
+    <td><strong>${f.nombre}</strong></td>
+    <td>${f.cliente_nombre}</td>
+    <td><span class="badge ${f.activa?'b-aprov':'b-rech'}">${f.activa?'Activa':'Inactiva'}</span></td>
+    <td>
+      <button class="btn btn-xs" onclick="editarFinca('${f.id}','${f.nombre.replace(/'/g,"\\'")}')">✏ Editar</button>
+      ${f.activa?`<button class="btn btn-xs btn-danger" onclick="desactivarFinca('${f.id}')">✕ Desactivar</button>`:''}
+    </td>
+  </tr>`).join('');
+
+  c.innerHTML = `
+    <div class="panel">
+      <div class="panel-hdr"><span class="panel-title">Fincas (${fincas.length})</span></div>
+      <div class="tbl-wrap"><table>
+        <thead><tr><th>Nombre</th><th>Cliente</th><th>Estado</th><th>Acciones</th></tr></thead>
+        <tbody>${rows||'<tr><td colspan=4 style="text-align:center;color:var(--muted)">Sin fincas registradas</td></tr>'}</tbody>
+      </table></div>
+    </div>
+
+    <!-- Modal finca -->
+    <div class="modal-bg" id="modal-finca">
+      <div class="modal" style="width:440px">
+        <div class="modal-hdr">
+          <div class="modal-title" id="mf-title">Nueva finca</div>
+          <button class="btn btn-sm" onclick="closeModal('modal-finca')">✕</button>
+        </div>
+        <div class="modal-body">
+          <input type="hidden" id="mf-id">
+          <div class="form-group" style="margin-bottom:12px">
+            <label class="form-label">Nombre de la finca <span class="req">*</span></label>
+            <input id="mf-nombre" placeholder="Ej: Finca La Esperanza" required>
+          </div>
+          ${U.rol==='admin_b'?`<div class="form-group">
+            <label class="form-label">Cliente <span class="req">*</span></label>
+            <select id="mf-cliente">${clientes.map(c=>`<option value="${c.id}">${c.nombre}</option>`).join('')}</select>
+          </div>`:`<input type="hidden" id="mf-cliente" value="${U.cliente_id||''}">`}
+          <div id="mf-err" style="color:var(--red);font-size:12px;margin-top:8px;display:none"></div>
+        </div>
+        <div class="modal-ftr">
+          <button class="btn" onclick="closeModal('modal-finca')">Cancelar</button>
+          <button class="btn btn-primary" onclick="guardarFinca()">Guardar</button>
+        </div>
+      </div>
+    </div>`;
+}
+
+function openModalFinca() {
+  document.getElementById('mf-id').value = '';
+  document.getElementById('mf-nombre').value = '';
+  document.getElementById('mf-title').textContent = 'Nueva finca';
+  document.getElementById('mf-err').style.display = 'none';
+  openModal('modal-finca');
+}
+
+function editarFinca(id, nombre) {
+  document.getElementById('mf-id').value    = id;
+  document.getElementById('mf-nombre').value = nombre;
+  document.getElementById('mf-title').textContent = 'Editar finca';
+  document.getElementById('mf-err').style.display = 'none';
+  openModal('modal-finca');
+}
+
+async function guardarFinca() {
+  const id     = document.getElementById('mf-id').value;
+  const nombre = document.getElementById('mf-nombre').value.trim();
+  const cliente_id = document.getElementById('mf-cliente').value;
+  const errEl  = document.getElementById('mf-err');
+  if (!nombre) { errEl.textContent='El nombre es obligatorio'; errEl.style.display=''; return; }
+  if (!cliente_id) { errEl.textContent='Selecciona el cliente'; errEl.style.display=''; return; }
+
+  let res;
+  if (id) {
+    res = await api(`/api/fincas/${id}`, {method:'PATCH', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({nombre, usuario_id: U.id})});
+  } else {
+    res = await api('/api/fincas', {method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({nombre, cliente_id})});
+  }
+  if (res.error) { errEl.textContent=res.error; errEl.style.display=''; return; }
+  closeModal('modal-finca');
+  toast(id ? 'Finca actualizada' : 'Finca creada');
+  renderFincas(document.getElementById('main-content'));
+}
+
+async function desactivarFinca(id) {
+  if (!confirm('¿Desactivar esta finca?')) return;
+  const res = await api(`/api/fincas/${id}?usuario_id=${U.id}`, {method:'DELETE'});
+  if (res.error) { toast(res.error,'err'); return; }
+  toast('Finca desactivada');
+  renderFincas(document.getElementById('main-content'));
+}
+
+
+async function renderMaquinas(c) {
+  document.getElementById('topbar-actions').innerHTML=`<button class="btn btn-primary btn-sm" onclick="openAddModal('maquina')">+ Agregar</button>`;
+  const data = await api('/api/maquinas');
+  const proveedores = await api('/api/proveedores');
+  const pMap = Object.fromEntries(proveedores.map(p=>[p.id,p.nombre]));
+  c.innerHTML=`<div class="panel"><div class="panel-hdr"><span class="panel-title">Flota de maquinaria (${data.length})</span></div>
+    <div class="tbl-wrap"><table><thead><tr><th>Placa</th><th>Tipo</th><th>Marca / Modelo</th><th>Propietario</th><th>Tarifa → Cliente</th><th>Tarifa → Alquimaq</th><th>Estado</th><th></th></tr></thead>
+    <tbody>${data.map(m=>`<tr>
+      <td><strong>${m.placa}</strong></td><td>${m.tipo}</td><td>${m.marca||''} ${m.modelo||''}</td>
+      <td>${m.propietario==='alquimaq'?'<span class="badge b-aprov">Alquimaq</span>':`<span class="badge b-gray">Prov: ${pMap[m.propietario]||m.propietario}</span>`}</td>
+      <td>$${m.tarifa_a_c}/h</td><td>${m.tarifa_a_b?'$'+m.tarifa_a_b+'/h':'—'}</td>
+      <td><span class="badge ${m.activa?'b-aprov':'b-rech'}">${m.activa?'Activa':'Inactiva'}</span></td>
+      <td><button class="btn btn-xs" onclick="editarMaestro('maquina','${m.id}')">✏</button></td>
+    </tr>`).join('')}</tbody></table></div></div>`;
+}
+
+async function renderClientes(c) {
+  document.getElementById('topbar-actions').innerHTML=`<button class="btn btn-primary btn-sm" onclick="openAddModal('cliente')">+ Agregar</button>`;
+  const data = await api('/api/clientes');
+  c.innerHTML=`<div class="panel"><div class="panel-hdr"><span class="panel-title">Clientes (${data.length})</span></div>
+    <div class="tbl-wrap"><table><thead><tr><th>Empresa</th><th>RUC</th><th>Contacto</th><th>Email</th><th>Estado</th><th></th></tr></thead>
+    <tbody>${data.map(e=>`<tr><td><strong>${e.nombre}</strong></td><td>${e.ruc||'—'}</td><td>${e.contacto||'—'}</td><td>${e.email||'—'}</td>
+      <td><span class="badge ${e.activo?'b-aprov':'b-rech'}">${e.activo?'Activo':'Inactivo'}</span></td>
+      <td><button class="btn btn-xs" onclick="editarMaestro('cliente','${e.id}')">✏</button></td></tr>`).join('')}</tbody></table></div></div>`;
+}
+
+async function renderProveedores(c) {
+  document.getElementById('topbar-actions').innerHTML=`<button class="btn btn-primary btn-sm" onclick="openAddModal('proveedor')">+ Agregar</button>`;
+  const data = await api('/api/proveedores');
+  c.innerHTML=`<div class="panel"><div class="panel-hdr"><span class="panel-title">Proveedores (${data.length})</span></div>
+    <div class="tbl-wrap"><table><thead><tr><th>Nombre</th><th>RUC</th><th>Contacto</th><th>Email</th><th>Estado</th><th></th></tr></thead>
+    <tbody>${data.map(e=>`<tr><td><strong>${e.nombre}</strong></td><td>${e.ruc||'—'}</td><td>${e.contacto||'—'}</td><td>${e.email||'—'}</td>
+      <td><span class="badge ${e.activo?'b-aprov':'b-rech'}">${e.activo?'Activo':'Inactivo'}</span></td>
+      <td><button class="btn btn-xs" onclick="editarMaestro('proveedor','${e.id}')">✏</button></td></tr>`).join('')}</tbody></table></div></div>`;
+}
+
+// ── NUEVO DOCUMENTO (CAMBIO 3 + 4) ───────────────────────────────
+async function renderNuevoDoc(c) {
+  const [clientes,maquinas,operarios,usuarios] = await Promise.all([
+    api('/api/clientes'), api('/api/maquinas'), api('/api/operarios'), api('/api/usuarios')
+  ]);
+  const supsAlquimaq = usuarios.filter(u=>u.actor==='b' && (u.rol==='controlador_b'||u.rol==='admin_b'));
+  const supsCliente    = usuarios.filter(u=>u.actor==='c' && u.rol==='controlador_c');
+  const supsSupervisor = usuarios.filter(u=>u.actor==='c' && u.rol==='supervisor_c');
+  c.innerHTML=`<div class="panel" style="max-width:760px"><div class="panel-hdr"><span class="panel-title">Registrar horas de maquinaria</span></div>
+    <div class="panel-body"><form id="form-doc" onsubmit="submitDoc(event)">
+      <div class="sec-title">Datos generales</div>
+      <div class="form-grid">
+        <div class="form-group"><label class="form-label">Cliente <span class="req">*</span></label>
+          <select id="nd-cli" required onchange="loadPrNd()">${clientes.map(e=>`<option value="${e.id}">${e.nombre}</option>`).join('')}</select></div>
+        <div class="form-group"><label class="form-label">Proyecto</label>
+          <select id="nd-proy"><option value="">— Seleccionar —</option></select></div>
+        <div class="form-group"><label class="form-label">Máquina (placa) <span class="req">*</span></label>
+          <select id="nd-maq" required>${maquinas.map(m=>`<option value="${m.id}">${m.placa} · ${m.tipo}</option>`).join('')}</select></div>
+        <div class="form-group"><label class="form-label">Operario</label>
+          <select id="nd-op"><option value="">— Seleccionar —</option>${operarios.map(o=>`<option value="${o.id}">${o.nombre}</option>`).join('')}</select></div>
+        <div class="form-group"><label class="form-label">Fecha de trabajo <span class="req">*</span></label>
+          <input type="date" id="nd-ft" required value="${new Date().toISOString().slice(0,10)}" onchange="checkTardioNd()"></div>
+        <div class="form-group"><label class="form-label">Finca</label>
+          <input type="text" id="nd-finca" placeholder="Nombre de la finca"></div>
+        <div class="form-group"><label class="form-label">Área</label>
+          <input type="text" id="nd-area" placeholder="Área de trabajo"></div>
+        <div class="form-group"><label class="form-label">Obra <span class="req">*</span></label>
+          <input type="text" id="nd-obra" required placeholder="Nombre de la obra"></div>
+        <div class="form-group"><label class="form-label">Combustible</label>
+          <input type="text" id="nd-comb" placeholder="Ej: 45 galones"></div>
+        <div class="form-group"><label class="form-label">Controlador Alquimaq</label>
+          <select id="nd-sup-alq"><option value="">— Seleccionar —</option>${supsAlquimaq.map(u=>`<option value="${u.nombre}">${u.nombre}</option>`).join('')}</select></div>
+        <div class="form-group"><label class="form-label">Controlador Cliente</label>
+          <select id="nd-sup-cli"><option value="">— Seleccionar —</option>${supsCliente.map(u=>`<option value="${u.nombre}">${u.nombre}</option>`).join('')}</select></div>
+        <div class="form-group"><label class="form-label">Supervisor Cliente</label>
+          <select id="nd-ctrl-cli-sup"><option value="">— Sin asignar —</option>${supsSupervisor.map(u=>`<option value="${u.nombre}">${u.nombre}</option>`).join('')}</select></div>
+      </div>
+
+      <div class="sec-title" style="margin-top:16px">Jornadas de trabajo</div>
+      <div class="form-grid">
+        <div class="form-group"><label class="form-label">Mañana — hora inicio</label><input type="time" id="nd-mi" onchange="calcularValidacion()"></div>
+        <div class="form-group"><label class="form-label">Mañana — hora fin</label><input type="time" id="nd-mf" onchange="calcularValidacion()"></div>
+        <div class="form-group"><label class="form-label">Tarde — hora inicio</label><input type="time" id="nd-ti" onchange="calcularValidacion()"></div>
+        <div class="form-group"><label class="form-label">Tarde — hora fin</label><input type="time" id="nd-tf" onchange="calcularValidacion()"></div>
+      </div>
+
+      <div class="sec-title" style="margin-top:16px">Horómetro y totales</div>
+      <div class="form-grid">
+        <div class="form-group"><label class="form-label">Horómetro inicio <span class="req">*</span></label>
+          <input type="number" id="nd-hi" step="0.1" placeholder="ej: 4210.3" onchange="calcularValidacion()" required></div>
+        <div class="form-group"><label class="form-label">Horómetro fin <span class="req">*</span></label>
+          <input type="number" id="nd-hf" step="0.1" placeholder="ej: 4219.8" onchange="calcularValidacion()" required></div>
+        <div class="form-group"><label class="form-label">Total horas declaradas <span class="req">*</span></label>
+          <input type="number" id="nd-h" min="0.5" max="24" step="0.5" placeholder="ej: 9.5" onchange="calcularValidacion()" required></div>
+        <div class="form-group"><label class="form-label">Foto horómetro</label>
+          <input type="file" id="nd-foto" accept="image/*"></div>
+      </div>
+
+      <!-- CAMBIO 3: panel de validación en tiempo real -->
+      <div id="val-panel" style="display:none;margin:14px 0"></div>
+      <div id="tardio-warn" style="display:none;margin:8px 0" class="val-box val-warn">⚠ La fecha de trabajo es anterior a hoy. Quedará marcado como registro tardío.</div>
+
+      <div class="form-group full" style="margin-top:12px"><label class="form-label">Observaciones</label>
+        <textarea id="nd-obs" placeholder="Observaciones adicionales..."></textarea></div>
+
+      <div style="margin-top:16px;display:flex;gap:8px">
+        <button type="submit" class="btn btn-primary" id="btn-guardar">✓ Guardar documento</button>
+        <button type="reset" class="btn" onclick="resetNd()">Limpiar</button>
+      </div>
+    </form></div></div>`;
+  loadPrNd();
+}
+
+async function loadPrNd() {
+  const cid = document.getElementById('nd-cli').value;
+  const data = await api(`/api/proyectos?cliente_id=${cid}`);
+  document.getElementById('nd-proy').innerHTML='<option value="">— Sin proyecto —</option>'+data.map(p=>`<option value="${p.id}">${p.nombre}</option>`).join('');
+}
+
+function checkTardioNd(){
+  const hoy = new Date().toISOString().slice(0,10);
+  const ft  = document.getElementById('nd-ft')?.value||'';
+  document.getElementById('tardio-warn').style.display = (ft && ft<hoy) ? '' : 'none';
+}
+
+function calcH2(ini,fin){
+  if(!ini||!fin) return 0;
+  const [hi,mi]=ini.split(':').map(Number);
+  const [hf,mf]=fin.split(':').map(Number);
+  return Math.round(((hf*60+mf)-(hi*60+mi))/60*10)/10;
+}
+
+function calcularValidacion() {
+  const mi = document.getElementById('nd-mi')?.value||'';
+  const mf = document.getElementById('nd-mf')?.value||'';
+  const ti = document.getElementById('nd-ti')?.value||'';
+  const tf = document.getElementById('nd-tf')?.value||'';
+  const hi = parseFloat(document.getElementById('nd-hi')?.value)||null;
+  const hf = parseFloat(document.getElementById('nd-hf')?.value)||null;
+  const hD = parseFloat(document.getElementById('nd-h')?.value)||0;
+  const hm = calcH2(mi,mf); const ht = calcH2(ti,tf);
+  const hR = Math.round((hm+ht)*10)/10;
+  const difHoro = hi!==null && hf!==null ? Math.round((hf-hi)*10)/10 : null;
+  const panel = document.getElementById('val-panel');
+  const btn   = document.getElementById('btn-guardar');
+  const errores = [];
+  if (hR>0 && Math.abs(hR-hD)>0.1) errores.push(`Rangos horarios suman ${hR}h pero declaraste ${hD}h`);
+  if (difHoro!==null && Math.abs(difHoro-hD)>0.2) errores.push(`Horómetro indica ${difHoro}h pero declaraste ${hD}h`);
+  if (!hD) { panel.style.display='none'; return; }
+  panel.style.display='';
+  if (errores.length) {
+    panel.className='val-box val-err';
+    panel.innerHTML='⚠ <strong>Corrige antes de guardar:</strong><br>• '+errores.join('<br>• ');
+    btn.disabled=true; btn.style.opacity='.5';
+  } else {
+    panel.className='val-box val-ok';
+    let msg = '✓ Valores verificados:';
+    if (hR>0) msg += ` Rangos = ${hR}h.`;
+    if (difHoro!==null) msg += ` Horómetro Δ = ${difHoro}h.`;
+    msg += ` Total declarado = ${hD}h. Todo cuadra.`;
+    panel.innerHTML=msg;
+    btn.disabled=false; btn.style.opacity='1';
+  }
+}
+
+function resetNd(){
+  document.getElementById('val-panel').style.display='none';
+  document.getElementById('tardio-warn').style.display='none';
+  const btn=document.getElementById('btn-guardar');
+  if(btn){btn.disabled=false;btn.style.opacity='1';}
+}
+
+async function submitDoc(e) {
+  e.preventDefault();
+  const fd = new FormData();
+  const fields = {
+    cliente_id:'nd-cli', proyecto_id:'nd-proy', maquina_id:'nd-maq', operario_id:'nd-op',
+    fecha_trabajo:'nd-ft', finca:'nd-finca', area:'nd-area',
+    obra:'nd-obra', combustible:'nd-comb',
+    supervisor_alquimaq:'nd-sup-alq', supervisor_cliente:'nd-sup-cli',
+    manana_inicio:'nd-mi', manana_fin:'nd-mf', tarde_inicio:'nd-ti', tarde_fin:'nd-tf',
+    horometro_inicio:'nd-hi', horometro_fin:'nd-hf',
+    total_horas_declaradas:'nd-h', observaciones:'nd-obs'
+  };
+  Object.entries(fields).forEach(([k,id])=>{ const el=document.getElementById(id); if(el) fd.append(k,el.value); });
+  const foto = document.getElementById('nd-foto')?.files[0];
+  if (foto) fd.append('foto',foto);
+  const res  = await fetch('/api/documentos',{method:'POST',body:fd});
+  const data = await res.json();
+  if (data.error) { toast(data.detalles?data.detalles.join(' | '):data.error,'err'); return; }
+  toast(`Documento ${data.num_documento} guardado correctamente`);
+  document.getElementById('form-doc').reset();
+  resetNd();
+  updateBadges();
+}
+
+// ── MODALES AGREGAR ───────────────────────────────────────────────
+async function openAddModal(type) {
+  const forms = {
+    maquina: async () => {
+      const proveedores = await api('/api/proveedores');
+      return `<div class="form-grid">
+        <div class="form-group"><label class="form-label">Placa *</label><input id="af-placa" required></div>
+        <div class="form-group"><label class="form-label">Tipo</label><select id="af-tipo"><option>Excavadora</option><option>Volqueta</option><option>Motoniveladora</option><option>Compactadora</option><option>Retroexcavadora</option><option>Grúa</option><option>Otro</option></select></div>
+        <div class="form-group"><label class="form-label">Marca</label><input id="af-marca"></div>
+        <div class="form-group"><label class="form-label">Modelo</label><input id="af-modelo"></div>
+        <div class="form-group"><label class="form-label">Propietario</label>
+          <select id="af-prop"><option value="alquimaq">Alquimaq</option>${proveedores.map(p=>`<option value="${p.id}">${p.nombre}</option>`).join('')}</select></div>
+        <div class="form-group"><label class="form-label">Tarifa → Cliente ($/h) *</label><input id="af-tc" type="number" step="0.5"></div>
+        <div class="form-group"><label class="form-label">Tarifa → Alquimaq ($/h)</label><input id="af-ta" type="number" step="0.5" placeholder="Solo si es de proveedor"></div>
+      </div>`;
+    },
+    cliente: async () => `<div class="form-grid">
+      <div class="form-group full"><label class="form-label">Nombre *</label><input id="af-nom" required></div>
+      <div class="form-group"><label class="form-label">RUC</label><input id="af-ruc"></div>
+      <div class="form-group"><label class="form-label">Contacto</label><input id="af-con"></div>
+      <div class="form-group full"><label class="form-label">Email</label><input id="af-email" type="email"></div>
+    </div>`,
+    proveedor: async () => `<div class="form-grid">
+      <div class="form-group full"><label class="form-label">Nombre *</label><input id="af-nom" required></div>
+      <div class="form-group"><label class="form-label">RUC</label><input id="af-ruc"></div>
+      <div class="form-group"><label class="form-label">Contacto</label><input id="af-con"></div>
+      <div class="form-group full"><label class="form-label">Email</label><input id="af-email" type="email"></div>
+    </div>`
+  };
+  const titles = {maquina:'Nueva máquina',cliente:'Nuevo cliente',proveedor:'Nuevo proveedor'};
+  document.getElementById('madd-title').textContent = titles[type]||type;
+  document.getElementById('madd-body').innerHTML = await forms[type]();
+  document.getElementById('madd-ok').onclick = ()=>guardarAdd(type);
+  openModal('modal-add');
+}
+
+async function guardarAdd(type) {
+  let body, url;
+  if (type==='maquina') {
+    body={placa:document.getElementById('af-placa').value,tipo:document.getElementById('af-tipo').value,
+      marca:document.getElementById('af-marca').value,modelo:document.getElementById('af-modelo').value,
+      propietario:document.getElementById('af-prop').value,
+      tarifa_a_c:document.getElementById('af-tc').value,tarifa_a_b:document.getElementById('af-ta').value||null};
+    url='/api/maquinas';
+  } else if (type==='cliente') {
+    body={nombre:document.getElementById('af-nom').value,ruc:document.getElementById('af-ruc').value,
+      contacto:document.getElementById('af-con').value,email:document.getElementById('af-email').value};
+    url='/api/clientes';
+  } else {
+    body={nombre:document.getElementById('af-nom').value,ruc:document.getElementById('af-ruc').value,
+      contacto:document.getElementById('af-con').value,email:document.getElementById('af-email').value};
+    url='/api/proveedores';
+  }
+  const res = await api(url,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
+  if (res.error) { toast(res.error,'err'); return; }
+  closeModal('modal-add'); toast('Guardado correctamente'); renderView(currentView);
+}
+
+// ── BADGES ────────────────────────────────────────────────────────
+async function updateBadges() {
+  try {
+    const [rb, rc] = await Promise.all([api('/api/documentos?status=pendiente_b'),api('/api/documentos?status=pendiente_c')]);
+    const bb=document.getElementById('badge-pend-b'); if(bb) bb.textContent=rb.length;
+    const bc=document.getElementById('badge-pend-c'); if(bc) bc.textContent=rc.length;
+    const bpc=document.getElementById('badge-plan-cli');
+    if(bpc){const p=await api('/api/planillas_cliente?status=pendiente_recepcion');bpc.textContent=p.length;}
+  } catch(e){}
+}
+
+// CAMBIO 4: cerrar documentos seleccionados — proveedor
+async function cerrarParcialProv(id) {
+  const chks = [...document.querySelectorAll(`.pp-chk-${id}:checked`)].map(c=>c.value);
+  if (!chks.length) { toast('Selecciona al menos un documento','err'); return; }
+  const res = await api(`/api/planillas_prov/${id}/cerrar_parcial`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({usuario_id:U.id,documentos_ids:chks})});
+  if (res.error) { toast(res.error,'err'); return; }
+  toast(`Planilla ${res.num_documento} generada (${chks.length} documentos)`); loadPlanProv(); updateBadges();
+}
+// CAMBIO 4: cerrar documentos seleccionados — cliente
+async function cerrarParcialCli(id) {
+  const chks = [...document.querySelectorAll(`.pc-chk-${id}:checked`)].map(c=>c.value);
+  if (!chks.length) { toast('Selecciona al menos un documento','err'); return; }
+  const res = await api(`/api/planillas_cliente/${id}/cerrar_parcial`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({usuario_id:U.id,documentos_ids:chks})});
+  if (res.error) { toast(res.error,'err'); return; }
+  toast(`Planilla ${res.num_documento} generada (${chks.length} documentos)`); loadPlanCli(); updateBadges();
+}
+function selAllChk(cls, val) { document.querySelectorAll(cls).forEach(c=>c.checked=val); }
+
+// ─────────────────────────────────────────────────────────────────
+// EDITAR DOCUMENTOS DE HORAS
+// ─────────────────────────────────────────────────────────────────
+function puedeEditarDoc(r) {
+  if (!['pendiente_b','pendiente_c','rechazado_b','rechazado_c'].includes(r.status)) return false;
+  if (U.rol === 'admin_b' || U.rol === 'supervisor_c') return true;
+  if (U.rol === 'controlador_b') return !r.supervisor_alquimaq || r.supervisor_alquimaq === U.nombre;
+  if (U.rol === 'controlador_c') return !r.supervisor_cliente || r.supervisor_cliente === U.nombre;
+  return false;
+}
+
+let docEditando = null;
+
+async function abrirEditarDoc(id) {
+  const data = await api('/api/documentos?');
+  // Buscar el documento en la respuesta
+  const todos = await api('/api/documentos?');
+  docEditando = todos.find(r=>r.id===id);
+  if (!docEditando) { toast('Documento no encontrado','err'); return; }
+  const r = docEditando;
+
+  const usuarios = await api('/api/usuarios');
+  const ctrlsAlq = usuarios.filter(u=>u.actor==='b'&&(u.rol==='controlador_b'||u.rol==='admin_b'));
+  const ctrlsCli = usuarios.filter(u=>u.actor==='c'&&u.rol==='controlador_c'&&(!U.cliente_id||u.cliente_id===r.cliente_id));
+
+  document.getElementById('madd-title').textContent = `Editar documento ${r.num_documento}`;
+  document.getElementById('madd-body').innerHTML = `
+    <div class="form-grid">
+      <div class="form-group"><label class="form-label">Fecha de trabajo</label>
+        <input type="date" id="ed-ft" value="${r.fecha_trabajo}"></div>
+      <div class="form-group"><label class="form-label">Mañana inicio</label>
+        <input type="time" id="ed-mi" value="${r.manana_inicio||''}"></div>
+      <div class="form-group"><label class="form-label">Mañana fin</label>
+        <input type="time" id="ed-mf" value="${r.manana_fin||''}"></div>
+      <div class="form-group"><label class="form-label">Tarde inicio</label>
+        <input type="time" id="ed-ti" value="${r.tarde_inicio||''}"></div>
+      <div class="form-group"><label class="form-label">Tarde fin</label>
+        <input type="time" id="ed-tf" value="${r.tarde_fin||''}"></div>
+      <div class="form-group"><label class="form-label">Total horas declaradas <span class="req">*</span></label>
+        <input type="number" id="ed-h" step="0.5" value="${r.total_horas_declaradas}"></div>
+      <div class="form-group"><label class="form-label">Horómetro inicio</label>
+        <input type="number" id="ed-hi" step="0.1" value="${r.horometro_inicio||''}"></div>
+      <div class="form-group"><label class="form-label">Horómetro fin</label>
+        <input type="number" id="ed-hf" step="0.1" value="${r.horometro_fin||''}"></div>
+      <div class="form-group"><label class="form-label">Obra</label>
+        <input type="text" id="ed-obra" value="${r.obra||''}"></div>
+      <div class="form-group"><label class="form-label">Área</label>
+        <input type="text" id="ed-area" value="${r.area||''}"></div>
+      <div class="form-group"><label class="form-label">Finca</label>
+        <input type="text" id="ed-finca" value="${r.finca||''}"></div>
+      <div class="form-group"><label class="form-label">Combustible</label>
+        <input type="text" id="ed-comb" value="${r.combustible||''}"></div>
+      <div class="form-group"><label class="form-label">Controlador Alquimaq</label>
+        <select id="ed-ctrl-alq"><option value="">— Sin asignar —</option>${ctrlsAlq.map(u=>`<option value="${u.nombre}" ${u.nombre===r.supervisor_alquimaq?'selected':''}>${u.nombre}</option>`).join('')}</select></div>
+      <div class="form-group"><label class="form-label">Controlador Cliente</label>
+        <select id="ed-ctrl-cli"><option value="">— Sin asignar —</option>${ctrlsCli.map(u=>`<option value="${u.nombre}" ${u.nombre===r.supervisor_cliente?'selected':''}>${u.nombre}</option>`).join('')}</select></div>
+      <div class="form-group full"><label class="form-label">Observaciones</label>
+        <textarea id="ed-obs">${r.observaciones||''}</textarea></div>
+      <div class="form-group full"><label class="form-label">Nueva foto horómetro (opcional)</label>
+        <input type="file" id="ed-foto" accept="image/*"></div>
+    </div>
+    <div id="ed-err" style="color:var(--red);font-size:12px;margin-top:8px;display:none"></div>`;
+  document.getElementById('madd-ok').onclick = guardarEditDoc;
+  openModal('modal-add');
+}
+
+async function guardarEditDoc() {
+  const r = docEditando; if (!r) return;
+  const fd = new FormData();
+  fd.append('usuario_id', U.id);
+  const map = {fecha_trabajo:'ed-ft',manana_inicio:'ed-mi',manana_fin:'ed-mf',
+    tarde_inicio:'ed-ti',tarde_fin:'ed-tf',total_horas_declaradas:'ed-h',
+    horometro_inicio:'ed-hi',horometro_fin:'ed-hf',
+    obra:'ed-obra',area:'ed-area',finca:'ed-finca',combustible:'ed-comb',
+    supervisor_alquimaq:'ed-ctrl-alq',supervisor_cliente:'ed-ctrl-cli',observaciones:'ed-obs'};
+  Object.entries(map).forEach(([k,id])=>{ const el=document.getElementById(id); if(el) fd.append(k,el.value); });
+  const foto = document.getElementById('ed-foto')?.files[0];
+  if (foto) fd.append('foto', foto);
+
+  const res = await fetch(`/api/documentos/${r.id}`, {method:'PATCH', body:fd});
+  const data = await res.json();
+  if (data.error) {
+    const errEl = document.getElementById('ed-err');
+    errEl.textContent = data.detalles ? data.detalles.join(' | ') : data.error;
+    errEl.style.display = '';
+    return;
+  }
+  closeModal('modal-add');
+  toast(`Documento ${data.num_documento} actualizado`);
+  renderView(currentView);
+}
+
+// ─────────────────────────────────────────────────────────────────
+// EDITAR MAESTROS (clientes, proveedores, máquinas)
+// ─────────────────────────────────────────────────────────────────
+async function editarMaestro(tipo, id) {
+  const urlMap = {cliente:'/api/clientes',proveedor:'/api/proveedores',maquina:'/api/maquinas'};
+  const lista = await api(urlMap[tipo]);
+  const item  = lista.find(x=>x.id===id);
+  if (!item) return;
+
+  let bodyHTML = '';
+  if (tipo === 'cliente' || tipo === 'proveedor') {
+    bodyHTML = `<div class="form-grid">
+      <div class="form-group full"><label class="form-label">Nombre</label><input id="em-nom" value="${item.nombre||''}"></div>
+      <div class="form-group"><label class="form-label">RUC</label><input id="em-ruc" value="${item.ruc||''}"></div>
+      <div class="form-group"><label class="form-label">Contacto</label><input id="em-con" value="${item.contacto||''}"></div>
+      <div class="form-group full"><label class="form-label">Email</label><input id="em-email" type="email" value="${item.email||''}"></div>
+      <div class="form-group"><label class="form-label">Estado</label>
+        <select id="em-act"><option value="true" ${item.activo?'selected':''}>Activo</option><option value="false" ${!item.activo?'selected':''}>Inactivo</option></select></div>
+    </div>`;
+  } else if (tipo === 'maquina') {
+    const proveedores = await api('/api/proveedores');
+    bodyHTML = `<div class="form-grid">
+      <div class="form-group"><label class="form-label">Placa</label><input id="em-placa" value="${item.placa||''}"></div>
+      <div class="form-group"><label class="form-label">Tipo</label>
+        <select id="em-tipo"><option ${item.tipo==='Excavadora'?'selected':''}>Excavadora</option><option ${item.tipo==='Volqueta'?'selected':''}>Volqueta</option><option ${item.tipo==='Motoniveladora'?'selected':''}>Motoniveladora</option><option ${item.tipo==='Compactadora'?'selected':''}>Compactadora</option><option ${item.tipo==='Retroexcavadora'?'selected':''}>Retroexcavadora</option><option ${item.tipo==='Grúa'?'selected':''}>Grúa</option><option ${item.tipo==='Otro'?'selected':''}>Otro</option></select></div>
+      <div class="form-group"><label class="form-label">Marca</label><input id="em-marca" value="${item.marca||''}"></div>
+      <div class="form-group"><label class="form-label">Modelo</label><input id="em-modelo" value="${item.modelo||''}"></div>
+      <div class="form-group"><label class="form-label">Propietario</label>
+        <select id="em-prop"><option value="alquimaq" ${item.propietario==='alquimaq'?'selected':''}>Alquimaq</option>${proveedores.map(p=>`<option value="${p.id}" ${item.propietario===p.id?'selected':''}>${p.nombre}</option>`).join('')}</select></div>
+      <div class="form-group"><label class="form-label">Tarifa → Cliente ($/h)</label><input type="number" id="em-tc" step="0.5" value="${item.tarifa_a_c||''}"></div>
+      <div class="form-group"><label class="form-label">Tarifa → Alquimaq ($/h)</label><input type="number" id="em-ta" step="0.5" value="${item.tarifa_a_b||''}"></div>
+      <div class="form-group"><label class="form-label">Estado</label>
+        <select id="em-act"><option value="true" ${item.activa?'selected':''}>Activa</option><option value="false" ${!item.activa?'selected':''}>Inactiva</option></select></div>
+    </div>`;
+  }
+
+  document.getElementById('madd-title').textContent = `Editar ${tipo === 'maquina' ? 'máquina' : tipo}`;
+  document.getElementById('madd-body').innerHTML = bodyHTML +
+    `<div id="em-err" style="color:var(--red);font-size:12px;margin-top:8px;display:none"></div>`;
+  document.getElementById('madd-ok').onclick = () => guardarMaestro(tipo, id, item);
+  openModal('modal-add');
+}
+
+async function guardarMaestro(tipo, id, original) {
+  let body = {};
+  if (tipo === 'cliente' || tipo === 'proveedor') {
+    body = { nombre: document.getElementById('em-nom').value,
+      ruc: document.getElementById('em-ruc').value,
+      contacto: document.getElementById('em-con').value,
+      email: document.getElementById('em-email').value,
+      activo: document.getElementById('em-act').value === 'true' };
+  } else {
+    body = { placa: document.getElementById('em-placa').value,
+      tipo: document.getElementById('em-tipo').value,
+      marca: document.getElementById('em-marca').value,
+      modelo: document.getElementById('em-modelo').value,
+      propietario: document.getElementById('em-prop').value,
+      tarifa_a_c: document.getElementById('em-tc').value,
+      tarifa_a_b: document.getElementById('em-ta').value || null,
+      activa: document.getElementById('em-act').value === 'true' };
+  }
+  const urlMap = {cliente:'/api/clientes',proveedor:'/api/proveedores',maquina:'/api/maquinas'};
+  const res = await api(`${urlMap[tipo]}/${id}`, {method:'PATCH', headers:{'Content-Type':'application/json'}, body:JSON.stringify(body)});
+  if (res.error) {
+    const errEl = document.getElementById('em-err');
+    errEl.textContent = res.error; errEl.style.display = '';
+    return;
+  }
+  closeModal('modal-add');
+  toast('Guardado correctamente');
+  renderView(currentView);
+}
+
+</script>
+</body>
+</html>
