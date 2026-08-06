@@ -56,6 +56,13 @@ async function initDB() {
     CREATE TABLE IF NOT EXISTS fincas (
       id TEXT PRIMARY KEY, nombre TEXT, cliente_id TEXT, activa BOOLEAN DEFAULT true
     );
+    -- Agregar columnas noche si no existen (para BD existente)
+    DO $$ BEGIN
+      IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='documentos' AND column_name='noche_inicio') THEN
+        ALTER TABLE documentos ADD COLUMN noche_inicio TEXT;
+        ALTER TABLE documentos ADD COLUMN noche_fin TEXT;
+      END IF;
+    END $$;
     CREATE TABLE IF NOT EXISTS documentos (
       id TEXT PRIMARY KEY, num_documento TEXT UNIQUE,
       operario_id TEXT, cliente_id TEXT, proyecto_id TEXT, maquina_id TEXT,
@@ -63,6 +70,7 @@ async function initDB() {
       obra TEXT, finca TEXT, area TEXT, combustible TEXT, observaciones TEXT,
       supervisor_alquimaq TEXT, supervisor_cliente TEXT, supervisor_cliente_sup TEXT,
       manana_inicio TEXT, manana_fin TEXT, tarde_inicio TEXT, tarde_fin TEXT,
+      noche_inicio TEXT, noche_fin TEXT,
       total_horas_declaradas NUMERIC, horometro_inicio NUMERIC, horometro_fin NUMERIC,
       foto_url TEXT, registro_tardio BOOLEAN DEFAULT false, origen TEXT DEFAULT 'portal',
       status TEXT DEFAULT 'pendiente_b',
@@ -237,7 +245,8 @@ async function enrichDoc(r) {
   }
   const hm = calcH(r.manana_inicio, r.manana_fin);
   const ht = calcH(r.tarde_inicio,  r.tarde_fin);
-  const hR = Math.round((hm+ht)*10)/10;
+  const hn = calcH(r.noche_inicio,  r.noche_fin);
+  const hR = Math.round((hm+ht+hn)*10)/10;
   const hD = parseFloat(r.total_horas_declaradas)||0;
   const hIni = r.horometro_inicio ? parseFloat(r.horometro_inicio) : null;
   const hFin = r.horometro_fin    ? parseFloat(r.horometro_fin)    : null;
@@ -251,7 +260,7 @@ async function enrichDoc(r) {
     maquina_desc: mq ? `${mq.marca||''} ${mq.modelo||''}`.trim() : '—',
     es_proveedor: esProveedor, proveedor_nombre: provNombre,
     tarifa_a_c: parseFloat(mq?.tarifa_a_c)||0, tarifa_a_b: parseFloat(mq?.tarifa_a_b)||0,
-    horas_manana: hm, horas_tarde: ht, horas_rangos: hR,
+    horas_manana: hm, horas_tarde: ht, horas_noche: hn, horas_rangos: hR,
     horometro_diferencia: difHoro,
     discrepancia_horas: hR>0 && Math.abs(hR-hD)>0.2,
     discrepancia_horometro: difHoro!==null && Math.abs(difHoro-hD)>0.5,
@@ -444,7 +453,7 @@ app.get('/api/fincas/buscar/:nombre', async (req,res) => {
   try {
     const buscar = normalizarNombre(req.params.nombre);
     const {rows} = await db.query(`SELECT f.*, c.nombre as cliente_nombre FROM fincas f LEFT JOIN clientes c ON c.id=f.cliente_id WHERE f.activa=true`);
-    const finca = rows.find(f => normalizarNombre(f.nombre) === buscar);
+    const finca = rows.find(f => normalizarNombre(f.nombre) === buscar && f.activa);
     if (!finca) return res.status(200).json({existe:false, nombre:'', cliente_id:''});
     res.json({existe:true, id:finca.id, nombre:finca.nombre, cliente_id:finca.cliente_id, cliente_nombre:finca.cliente_nombre});
   } catch(e){res.status(500).json({error:e.message});}
@@ -566,6 +575,7 @@ app.post('/api/documentos', upload.single('foto'), async (req,res) => {
       finca, area, combustible, observaciones,
       supervisor_alquimaq, supervisor_cliente, supervisor_cliente_sup,
       manana_inicio:mi_raw, manana_fin:mf_raw, tarde_inicio:ti_raw, tarde_fin:tf_raw,
+      noche_inicio:ni_raw, noche_fin:nf_raw,
       total_horas_declaradas, horometro_inicio, horometro_fin
     } = req.body;
     if (!maquina_id||!fecha_trabajo||!obra||!total_horas_declaradas)
@@ -584,11 +594,11 @@ app.post('/api/documentos', upload.single('foto'), async (req,res) => {
     const uCli = usrs.find(u=>normalizarNombre(u.nombre)===normalizarNombre(supCli));
     if (uAlq) supAlq=uAlq.nombre;
     if (uCli) supCli=uCli.nombre;
-    await db.query(`INSERT INTO documentos VALUES($1,$2,$3,$4,$5,$6,$7,NOW(),$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$20,$21,$22,$23,$24,false,'portal','pendiente_b',NULL,NULL,NULL,NULL)`,
+    await db.query(`INSERT INTO documentos VALUES($1,$2,$3,$4,$5,$6,$7,NOW(),$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$20,$21,$22,$23,$24,$25,$26,false,'portal','pendiente_b',NULL,NULL,NULL,NULL)`,
       [id,num,operario_id||null,cliente_id||null,proyecto_id||null,maquina_id,
        fecha_trabajo,obra,finca||'',area||'',combustible||'',observaciones||'',
        supAlq,supCli,supervisor_cliente_sup||'',
-       manana_inicio,manana_fin,tarde_inicio,tarde_fin,
+       manana_inicio,manana_fin,tarde_inicio,tarde_fin,normalizarHora(req.body.noche_inicio)||null,normalizarHora(req.body.noche_fin)||null,
        hD,hIni,hFin,req.file?`/uploads/${req.file.filename}`:null,
        fecha_trabajo<hoy]);
     const {rows} = await db.query('SELECT * FROM documentos WHERE id=$1',[id]);
@@ -961,6 +971,7 @@ app.post('/api/documentos/jelou', async (req,res) => {
       finca, area, combustible, observaciones,
       supervisor_alquimaq:supAlqRaw, supervisor_cliente:supCliRaw, supervisor_cliente_sup,
       manana_inicio:mi_raw, manana_fin:mf_raw, tarde_inicio:ti_raw, tarde_fin:tf_raw,
+      noche_inicio:ni_raw, noche_fin:nf_raw,
       total_horas_declaradas, horometro_inicio, horometro_fin
     } = req.body;
     if (!maquina_placa||!fecha_trabajo||!obra||!total_horas_declaradas)
@@ -990,6 +1001,7 @@ app.post('/api/documentos/jelou', async (req,res) => {
     // Normalizar horas
     const manana_inicio=normalizarHora(mi_raw), manana_fin=normalizarHora(mf_raw);
     const tarde_inicio=normalizarHora(ti_raw),   tarde_fin=normalizarHora(tf_raw);
+    const noche_inicio=normalizarHora(ni_raw),   noche_fin=normalizarHora(nf_raw);
     const hD=parseFloat(total_horas_declaradas)||0;
     const hIni=horometro_inicio?parseFloat(horometro_inicio):null;
     const hFin=horometro_fin?parseFloat(horometro_fin):null;
@@ -1009,11 +1021,11 @@ app.post('/api/documentos/jelou', async (req,res) => {
     }
     const hoy=new Date().toISOString().slice(0,10);
     const id=uuidv4(), num=await nextNum('doc');
-    await db.query(`INSERT INTO documentos VALUES($1,$2,$3,$4,NULL,$5,$6,NOW(),$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$20,$21,$22,$23,'whatsapp_jelou','pendiente_b',NULL,NULL,NULL,NULL)`,
+    await db.query(`INSERT INTO documentos VALUES($1,$2,$3,$4,NULL,$5,$6,NOW(),$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$20,$21,$22,$23,$24,$25,'whatsapp_jelou','pendiente_b',NULL,NULL,NULL,NULL)`,
       [id,num,operario?.id||null,clienteId,maq.id,
        fecha_trabajo,obra,finca||'',area||'',combustible||'',observaciones||'',
        supAlq,supCli,supervisor_cliente_sup||'',
-       manana_inicio,manana_fin,tarde_inicio,tarde_fin,
+       manana_inicio,manana_fin,tarde_inicio,tarde_fin,noche_inicio,noche_fin,
        hD,hIni,hFin,null,fecha_trabajo<hoy]);
     res.status(201).json({
       success:true, num_documento:num,
@@ -1027,13 +1039,25 @@ app.post('/api/documentos/jelou', async (req,res) => {
 // ─────────────────────────────────────────────────────────────────────────────
 app.get('/api/stats', async (req,res) => {
   try {
-    const mes = new Date().toISOString().slice(0,7);
-    const [pendB, pendC, aprov, pltAbiertas, facPend] = await Promise.all([
+    const periodo = req.query.periodo || 'mes';
+    let filtroFecha = '';
+    const now = new Date();
+    if (periodo === 'mes') {
+      const mes = now.toISOString().slice(0,7);
+      filtroFecha = `AND TO_CHAR(d.fecha_trabajo,'YYYY-MM')='${mes}'`;
+    } else if (periodo === 'semana') {
+      const lunes = new Date(now);
+      lunes.setDate(now.getDate() - (now.getDay()===0?6:now.getDay()-1));
+      filtroFecha = `AND d.fecha_trabajo >= '${lunes.toISOString().slice(0,10)}'`;
+    }
+    const [pendB, pendC, aprov, pltAbiertas, facPend, horasMaq, clientes] = await Promise.all([
       db.query("SELECT COUNT(*) FROM documentos WHERE status='pendiente_b'"),
       db.query("SELECT COUNT(*) FROM documentos WHERE status='pendiente_c'"),
-      db.query(`SELECT d.*,m.tarifa_a_c,m.tarifa_a_b,m.propietario FROM documentos d LEFT JOIN maquinas m ON m.id=d.maquina_id WHERE d.status='aprobado_c' AND TO_CHAR(d.fecha_trabajo,'YYYY-MM')=$1`,[mes]),
+      db.query(`SELECT d.*,m.tarifa_a_c,m.tarifa_a_b,m.propietario,m.placa FROM documentos d LEFT JOIN maquinas m ON m.id=d.maquina_id WHERE d.status='aprobado_c' ${filtroFecha}`),
       db.query("SELECT COUNT(*) FROM planillas_cliente WHERE status='abierta'"),
       db.query("SELECT COUNT(*) FROM facturas WHERE status='emitida'"),
+      db.query(`SELECT m.placa, SUM(d.total_horas_declaradas) as horas, SUM(d.total_horas_declaradas*m.tarifa_a_c) as monto FROM documentos d LEFT JOIN maquinas m ON m.id=d.maquina_id WHERE d.status='aprobado_c' ${filtroFecha} GROUP BY m.placa ORDER BY horas DESC LIMIT 8`),
+      db.query("SELECT COUNT(*) FROM clientes WHERE activo=true"),
     ]);
     const docs = aprov.rows;
     const cobradoC = docs.reduce((s,r)=>s+(parseFloat(r.total_horas_declaradas)||0)*(parseFloat(r.tarifa_a_c)||0),0);
@@ -1046,6 +1070,9 @@ app.get('/api/stats', async (req,res) => {
       margenB: cobradoC-pagadoA,
       plantillasAbiertas: parseInt(pltAbiertas.rows[0].count),
       facturasPendientes: parseInt(facPend.rows[0].count),
+      clientesActivos: parseInt(clientes.rows[0].count),
+      horasPorMaquina: horasMaq.rows.map(r=>([r.placa, parseFloat(r.horas)||0, parseFloat(r.monto)||0])),
+      periodo
     });
   } catch(e){res.status(500).json({error:e.message});}
 });

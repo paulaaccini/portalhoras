@@ -163,7 +163,7 @@ textarea{resize:vertical;min-height:65px}
 <div id="login-screen" class="login-wrap">
   <div class="login-card">
     <div class="login-logo">
-      <div class="brand">Registro de Horas</div>
+      <div class="brand">Alquimaq</div>
       <div class="sub">Portal de Control de Horas de Maquinaria</div>
     </div>
     <div style="margin-bottom:12px">
@@ -189,7 +189,7 @@ textarea{resize:vertical;min-height:65px}
 <!-- APP -->
 <div id="app-screen" class="app" style="display:none">
   <nav class="sidebar">
-    <div class="logo"><div class="logo-brand">Registo de Horas</div><div class="logo-sub" id="sid-sub">Portal de Control</div></div>
+    <div class="logo"><div class="logo-brand">Alquimaq</div><div class="logo-sub" id="sid-sub">Portal de Control</div></div>
     <div id="nav-menu"></div>
     <div class="sid-footer">
       <div class="sid-user">
@@ -285,23 +285,15 @@ function getMenus() {
   if (U.rol==='supervisor_c') return [
     {label:'Trabajo',items:[{view:'pend-c',label:'Pendientes de aprobación',icon:'⏳',badge:'pend-c'},{view:'historial',label:'Historial',icon:'📋'}]}
   ];
-  if (U.rol==='coordinador_c') return [
-    {label:'Trabajo',items:[{view:'plan-cli',label:'Planillas',icon:'✅',badge:'plan-cli'},{view:'historial',label:'Historial',icon:'📋'}]},
-    {label:'Mi empresa',items:[{view:'fincas',label:'Fincas',icon:'🌿'},{view:'usuarios',label:'Usuarios',icon:'👥'}]}
-  ];
-  if (U.rol==='admin_prov') return [
-    {label:'Trabajo',items:[{view:'plan-prov',label:'Mis planillas',icon:'📆'},{view:'historial',label:'Documentos',icon:'📋'}]}
-  ];
-}
 
-/* if (U.rol==='coordinador_c') return [
+  if (U.rol==='coordinador_c') return [
     {label:'Trabajo',items:[{view:'plan-cli',label:'Planillas',icon:'✅',badge:'plan-cli'},{view:'historial',label:'Historial',icon:'📋'}]}
   ];
   if (U.rol==='admin_prov') return [
     {label:'Trabajo',items:[{view:'plan-prov',label:'Mis planillas',icon:'📆'},{view:'historial',label:'Documentos',icon:'📋'}]}
   ];
   return [];
-}*/
+}
 
 function buildNav() {
   const nav = document.getElementById('nav-menu'); nav.innerHTML = '';
@@ -353,6 +345,7 @@ function badgePlt(s){
 function docDetail(r) {
   const mn = r.manana_inicio&&r.manana_fin ? `${r.manana_inicio} → ${r.manana_fin} (${r.horas_manana}h)` : '—';
   const td = r.tarde_inicio&&r.tarde_fin   ? `${r.tarde_inicio} → ${r.tarde_fin} (${r.horas_tarde}h)` : '—';
+  const tn = r.noche_inicio&&r.noche_fin   ? `${r.noche_inicio} → ${r.noche_fin} (${r.horas_noche||0}h)` : '—';
   // CAMBIO 7: solo mostrar botones si el estado permite acción
   const esControladorB = U.rol==='controlador_b' && (!r.supervisor_alquimaq || r.supervisor_alquimaq===U.nombre);
   const puedeAccionB = r.status==='pendiente_b'&&(U.rol==='admin_b'||esControladorB);
@@ -376,6 +369,7 @@ function docDetail(r) {
       <div><div class="dl">Combustible</div><div class="dv">${r.combustible||'—'}</div></div>
       <div><div class="dl">Jornada mañana</div><div class="dv">${mn}</div></div>
       <div><div class="dl">Jornada tarde</div><div class="dv">${td}</div></div>
+      <div><div class="dl">Jornada noche</div><div class="dv">${tn}</div></div>
       <div><div class="dl">Total horas</div><div class="dv" style="color:var(--navy);font-weight:700">${r.total_horas_declaradas} h</div></div>
       <div><div class="dl">Horómetro</div><div class="dv">${r.horometro_inicio||'—'} → ${r.horometro_fin||'—'} (Δ${r.horometro_diferencia??'—'}h)</div></div>
       <div><div class="dl">Controlador Alquimaq</div><div class="dv">${r.supervisor_alquimaq||'—'}</div></div>
@@ -464,10 +458,9 @@ async function renderPendC(c) {
 }
 
 async function renderHistorial(c) {
-  document.getElementById('topbar-actions').innerHTML=`<button class="btn btn-sm" onclick="exportConFiltros()">⬇ Excel</button>`;
-  const clientes = await api('/api/clientes');
-  const todasMaquinas = await api('/api/maquinas');
-  // CAMBIO 1: proveedor solo ve sus máquinas en los filtros
+  document.getElementById('topbar-actions').innerHTML=`<button class="btn btn-sm" onclick="exportConFiltros()">⬇ Excel</button><button class="btn btn-sm" onclick="exportHistorialPDF()">⬇ PDF</button>`;
+  // CAMBIO: siempre recarga catálogos frescos al abrir la vista
+  const [clientes, todasMaquinas] = await Promise.all([api('/api/clientes'), api('/api/maquinas')]);
   const maquinas = U.proveedor_id
     ? todasMaquinas.filter(m => m.propietario === U.proveedor_id)
     : todasMaquinas;
@@ -732,7 +725,14 @@ async function confirmarAccion() {
 
 // ── DASHBOARD (CAMBIO 5) ──────────────────────────────────────────
 async function renderDashboard(c) {
-  const s = await api(`/api/stats?rol=${U.rol}`);
+  document.getElementById('topbar-actions').innerHTML=`
+    <select id="dash-periodo" onchange="renderDashboard(document.getElementById('main-content'))" class="btn btn-sm" style="padding:5px 8px">
+      <option value="mes">Este mes</option>
+      <option value="semana">Esta semana</option>
+      <option value="todo">Todo</option>
+    </select>`;
+  const periodo = document.getElementById('dash-periodo')?.value||'mes';
+  const s = await api(`/api/stats?rol=${U.rol}&periodo=${periodo}`);
   const maxM = Math.max(...(s.horasPorMaquina||[]).map(x=>x[1]),1);
   const finBlock = (U.rol==='admin_b') ? `
     <div class="kpi-grid" style="grid-template-columns:repeat(3,1fr);margin-top:0">
@@ -766,13 +766,9 @@ async function renderDashboard(c) {
 
 // ── USUARIOS ──────────────────────────────────────────────────────
 async function renderUsuarios(c) {
-  //const [usuarios, clientes, proveedores] = await Promise.all([
-    //api('/api/usuarios'), api('/api/clientes'), api('/api/proveedores')
-  //]);
-  const urlUsuarios = U.cliente_id ? `/api/usuarios?cliente_id=${U.cliente_id}` : '/api/usuarios';
-const [usuarios, clientes, proveedores] = await Promise.all([
-  api(urlUsuarios), api('/api/clientes'), api('/api/proveedores')
-]);
+  const [usuarios, clientes, proveedores] = await Promise.all([
+    api('/api/usuarios'), api('/api/clientes'), api('/api/proveedores')
+  ]);
   const cMap = Object.fromEntries(clientes.map(x=>[x.id,x.nombre]));
   const pMap = Object.fromEntries(proveedores.map(x=>[x.id,x.nombre]));
   const ROL_OPTS = [
@@ -1122,6 +1118,8 @@ async function renderNuevoDoc(c) {
         <div class="form-group"><label class="form-label">Mañana — hora fin</label><input type="time" id="nd-mf" onchange="calcularValidacion()"></div>
         <div class="form-group"><label class="form-label">Tarde — hora inicio</label><input type="time" id="nd-ti" onchange="calcularValidacion()"></div>
         <div class="form-group"><label class="form-label">Tarde — hora fin</label><input type="time" id="nd-tf" onchange="calcularValidacion()"></div>
+        <div class="form-group"><label class="form-label">Noche — hora inicio</label><input type="time" id="nd-ni" onchange="calcularValidacion()"></div>
+        <div class="form-group"><label class="form-label">Noche — hora fin</label><input type="time" id="nd-nf" onchange="calcularValidacion()"></div>
       </div>
 
       <div class="sec-title" style="margin-top:16px">Horómetro y totales</div>
@@ -1219,6 +1217,7 @@ async function submitDoc(e) {
     obra:'nd-obra', combustible:'nd-comb',
     supervisor_alquimaq:'nd-sup-alq', supervisor_cliente:'nd-sup-cli',
     manana_inicio:'nd-mi', manana_fin:'nd-mf', tarde_inicio:'nd-ti', tarde_fin:'nd-tf',
+    noche_inicio:'nd-ni', noche_fin:'nd-nf',
     horometro_inicio:'nd-hi', horometro_fin:'nd-hf',
     total_horas_declaradas:'nd-h', observaciones:'nd-obs'
   };
@@ -1392,7 +1391,7 @@ async function guardarEditDoc() {
   const fd = new FormData();
   fd.append('usuario_id', U.id);
   const map = {fecha_trabajo:'ed-ft',manana_inicio:'ed-mi',manana_fin:'ed-mf',
-    tarde_inicio:'ed-ti',tarde_fin:'ed-tf',total_horas_declaradas:'ed-h',
+    tarde_inicio:'ed-ti',tarde_fin:'ed-tf',noche_inicio:'ed-ni',noche_fin:'ed-nf',total_horas_declaradas:'ed-h',
     horometro_inicio:'ed-hi',horometro_fin:'ed-hf',
     obra:'ed-obra',area:'ed-area',finca:'ed-finca',combustible:'ed-comb',
     supervisor_alquimaq:'ed-ctrl-alq',supervisor_cliente:'ed-ctrl-cli',observaciones:'ed-obs'};
@@ -1486,6 +1485,59 @@ async function guardarMaestro(tipo, id, original) {
   renderView(currentView);
 }
 
+
+// CAMBIO 5: Exportar historial a PDF usando ventana de impresión
+async function exportHistorialPDF() {
+  const cli   = document.getElementById('fh-cli')?.value||'';
+  const maq   = document.getElementById('fh-maq')?.value||'';
+  const desde = document.getElementById('fh-desde')?.value||'';
+  const hasta = document.getElementById('fh-hasta')?.value||'';
+  const status= document.getElementById('fh-status')?.value||'';
+  let url='/api/documentos?';
+  if (U.cliente_id)   url+=`cliente_id=${U.cliente_id}&`;
+  if (U.proveedor_id) url+=`proveedor_id=${U.proveedor_id}&`;
+  if (cli)    url+=`cliente_id=${cli}&`;
+  if (maq)    url+=`maquina_id=${maq}&`;
+  if (desde)  url+=`desde=${desde}&`;
+  if (hasta)  url+=`hasta=${hasta}&`;
+  if (status) url+=`status=${status}&`;
+  const docs = await api(url);
+  const hoy = new Date().toLocaleDateString('es-EC');
+  const rows = docs.map(r=>`
+    <tr>
+      <td>${r.num_documento}</td>
+      <td>${r.cliente_nombre}</td>
+      <td>${r.maquina_placa}</td>
+      <td>${r.fecha_trabajo?.slice?.(0,10)||r.fecha_trabajo}</td>
+      <td>${r.obra}</td>
+      <td>${r.finca||'—'}</td>
+      <td>${r.total_horas_declaradas}h</td>
+      <td>${r.supervisor_alquimaq||'—'}</td>
+      <td>${r.status}</td>
+    </tr>`).join('');
+  const win = window.open('','_blank');
+  win.document.write(`<!DOCTYPE html><html><head><meta charset="UTF-8">
+    <title>Historial de Documentos</title>
+    <style>
+      body{font-family:Arial,sans-serif;font-size:11px;padding:20px}
+      h1{font-size:16px;color:#1B3A5C;margin-bottom:4px}
+      p{color:#666;margin-bottom:12px}
+      table{width:100%;border-collapse:collapse}
+      th{background:#1B3A5C;color:#fff;padding:6px 8px;text-align:left;font-size:10px}
+      td{padding:5px 8px;border-bottom:1px solid #eee;font-size:10px}
+      tr:nth-child(even) td{background:#f8f9fa}
+      @media print{button{display:none}}
+    </style></head><body>
+    <h1>Registros de Horas — Alquimaq</h1>
+    <p>Exportado: ${hoy} | Total: ${docs.length} documentos</p>
+    <button onclick="window.print()" style="margin-bottom:12px;padding:6px 14px;background:#1B3A5C;color:#fff;border:none;border-radius:4px;cursor:pointer">🖨 Imprimir / Guardar PDF</button>
+    <table>
+      <thead><tr><th>No. Doc</th><th>Cliente</th><th>Máquina</th><th>Fecha</th><th>Obra</th><th>Finca</th><th>Horas</th><th>Controlador Alq.</th><th>Estado</th></tr></thead>
+      <tbody>${rows}</tbody>
+    </table>
+    </body></html>`);
+  win.document.close();
+}
 </script>
 </body>
 </html>
